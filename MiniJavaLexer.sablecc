@@ -1,0 +1,70 @@
+Package
+  minijava;
+Helpers
+  unicode_input_character = [0..0xffff];
+  ht                      = 0x0009; // horizontal tab
+  lf                      = 0x000a; // line feed or newline
+  ff                      = 0x000c; // form feed, or page break
+  cr                      = 0x000d; // carriage return
+  sp                      = ' ';    // space
+  line_terminator         = lf | cr | cr lf;
+  input_character         = [unicode_input_character - [cr + lf]];
+  input_character         = [unicode_input_character - [cr + lf]];
+  not_star                = [input_character - '*'] | line_terminator;
+  not_star_not_slash      = [input_character - ['*' + '/']] | line_terminator;
+  digit                   = ['0'..'9'];
+  letter                  = ['a'..'z'] | ['A'..'Z'];
+Tokens
+  // KEYWORDS
+  class                   = ... ; // Complete aqui
+  public                  = ... ; // Complete aqui
+  static                  = ... ; // Complete aqui
+  void                    = ... ; // Complete aqui
+  main                    = ... ; // Complete aqui
+  extends                 = ... ; // Complete aqui
+  if                      = ... ; // Complete aqui
+  else                    = ... ; // Complete aqui
+  while                   = ... ; // Complete aqui
+  this                    = ... ; // Complete aqui
+  super                   = ... ; // Complete aqui
+  new                     = ... ; // Complete aqui
+  print                   = ... ; // Complete aqui. `print` representa o token System.out.println
+  int                     = ... ; // Complete aqui
+  boolean                 = ... ; // Complete aqui
+  string                  = ... ; // Complete aqui
+  return                  = ... ; // Complete aqui
+
+  // BRACES
+  lparen                  = ... ; // Complete aqui
+  rparen                  = ... ; // Complete aqui
+  lbrace                  = ... ; // Complete aqui
+  rbrace                  = ... ; // Complete aqui
+  lbracket                = ... ; // Complete aqui
+  rbracket                = ... ; // Complete aqui
+
+  // OPERATORS
+  plus                    = ... ; // Complete aqui
+  minus                   = ... ; // Complete aqui
+  mult                    = ... ; // Complete aqui
+  and                     = ... ; // Complete aqui
+  not                     = ... ; // Complete aqui
+  less                    = ... ; // Complete aqui
+  length                  = ... ; // Complete aqui. `length` representa o token length (Expression ::= Expression '.' length)
+
+  // OTHERS
+  assign                  = ... ; // Complete aqui
+  semicolon               = ... ; // Complete aqui
+  comma                   = ... ; // Complete aqui
+  dot                     = ... ; // Complete aqui
+
+  // LITERALS
+  integer_literal         = ... ; // Complete aqui
+  boolean_literal         = ... ; // Complete aqui
+  identifier              = ... ; // Complete aqui
+
+  // WS
+  white_space             = ... ; // Complete aqui
+  comment                 = ... ; // Complete aqui
+
+Ignored Tokens
+  white_space, comment;
