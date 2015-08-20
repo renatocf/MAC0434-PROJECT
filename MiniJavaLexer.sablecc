@@ -1,3 +1,9 @@
+/****************************************************************
+ * Dupla:                                                       *
+ * Gabriel Ferreira Guilhoto - NUSP: 4404279                    *
+ * Renato Cordeiro Ferreira  - NUSP: 7990933                    *
+ ****************************************************************/
+
 Package
   minijava;
 Helpers
@@ -9,62 +15,62 @@ Helpers
   sp                      = ' ';    // space
   line_terminator         = lf | cr | cr lf;
   input_character         = [unicode_input_character - [cr + lf]];
-  input_character         = [unicode_input_character - [cr + lf]];
   not_star                = [input_character - '*'] | line_terminator;
   not_star_not_slash      = [input_character - ['*' + '/']] | line_terminator;
   digit                   = ['0'..'9'];
   letter                  = ['a'..'z'] | ['A'..'Z'];
 Tokens
   // KEYWORDS
-  class                   = ... ; // Complete aqui
-  public                  = ... ; // Complete aqui
-  static                  = ... ; // Complete aqui
-  void                    = ... ; // Complete aqui
-  main                    = ... ; // Complete aqui
-  extends                 = ... ; // Complete aqui
-  if                      = ... ; // Complete aqui
-  else                    = ... ; // Complete aqui
-  while                   = ... ; // Complete aqui
-  this                    = ... ; // Complete aqui
-  super                   = ... ; // Complete aqui
-  new                     = ... ; // Complete aqui
-  print                   = ... ; // Complete aqui. `print` representa o token System.out.println
-  int                     = ... ; // Complete aqui
-  boolean                 = ... ; // Complete aqui
-  string                  = ... ; // Complete aqui
-  return                  = ... ; // Complete aqui
+  class                   = 'class';
+  public                  = 'public';
+  static                  = 'static';
+  void                    = 'void';
+  main                    = 'main';
+  extends                 = 'extends';
+  if                      = 'if';
+  else                    = 'else';
+  while                   = 'while';
+  this                    = 'this';
+  super                   = 'super';
+  new                     = 'new';
+  print                   = 'System.out.println';
+  int                     = 'int';
+  boolean                 = 'boolean';
+  string                  = 'String';
+  return                  = 'return';
 
   // BRACES
-  lparen                  = ... ; // Complete aqui
-  rparen                  = ... ; // Complete aqui
-  lbrace                  = ... ; // Complete aqui
-  rbrace                  = ... ; // Complete aqui
-  lbracket                = ... ; // Complete aqui
-  rbracket                = ... ; // Complete aqui
+  lparen                  = '(';
+  rparen                  = ')';
+  lbrace                  = '{';
+  rbrace                  = '}';
+  lbracket                = '[';
+  rbracket                = ']';
 
   // OPERATORS
-  plus                    = ... ; // Complete aqui
-  minus                   = ... ; // Complete aqui
-  mult                    = ... ; // Complete aqui
-  and                     = ... ; // Complete aqui
-  not                     = ... ; // Complete aqui
-  less                    = ... ; // Complete aqui
-  length                  = ... ; // Complete aqui. `length` representa o token length (Expression ::= Expression '.' length)
+  plus                    = '+';
+  minus                   = '-';
+  mult                    = '*';
+  and                     = '&&';
+  not                     = '!';
+  less                    = '<';
+  length                  = 'length';
 
   // OTHERS
-  assign                  = ... ; // Complete aqui
-  semicolon               = ... ; // Complete aqui
-  comma                   = ... ; // Complete aqui
-  dot                     = ... ; // Complete aqui
+  assign                  = '=';
+  semicolon               = ';';
+  comma                   = ',';
+  dot                     = '.';
 
   // LITERALS
-  integer_literal         = ... ; // Complete aqui
-  boolean_literal         = ... ; // Complete aqui
-  identifier              = ... ; // Complete aqui
+  integer_literal         = '-'? (digit)+;
+  boolean_literal         = ('false' | 'true');
+  identifier              = letter (letter | digit | '_')*;
 
   // WS
-  white_space             = ... ; // Complete aqui
-  comment                 = ... ; // Complete aqui
+  white_space             = (ht | ff | sp | line_terminator);
+  comment                 = ( ('//' input_character* line_terminator)
+                            | ('/*' (not_star)* ('*' | not_star_not_slash (not_star)*)* '*/') );
 
 Ignored Tokens
   white_space, comment;
