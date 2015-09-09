@@ -121,10 +121,10 @@ Productions
   |   {boolean_term}     boolean_term;
 
   boolean_term
-  =   {neg_relation}     not relation
-  |   {relation}         relation;
+  =   {neg_relation}     not boolean_factor
+  |   {relation}         boolean_factor;
 
-  relation
+  boolean_factor
   =   {less}             [lhs]:expression less [rhs]:expression
   |   {expression}       expression;
 
