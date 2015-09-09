@@ -95,7 +95,7 @@ Productions
   method_declaration_list = {empty} | method_declaration_list method_declaration;
 
   method_declaration = public type identifier lparen argument_list rparen lbrace var_declaration_list statement_list return boolean_expression semicolon rbrace;
-  
+
   argument_list = {empty} | type identifier argument_list_tail;
 
   argument_list_tail = {empty} | comma type identifier argument_list_tail;
@@ -153,3 +153,116 @@ Productions
   arg_list = {empty} | boolean_expression arg_list_tail;
 
   arg_list_tail = {empty} | comma boolean_expression arg_list_tail;
+
+Abstract Syntax Tree
+
+  program =
+    [main_class]:main_class
+    [class_decl]:class_decl*;
+
+  main_class =
+    [name]:identifier
+    [method_parameter]:identifier
+    [statement]:statement;
+
+  class_decl =
+    {extends}
+      [name]:identifier
+      [parent]:identifier
+      [variables]:variable_declaration*
+      [methods]:method_declaration* |
+    {simple}
+      [name]:identifier
+      [variables]:variable_declaration*
+      [methods]:method_declaration*;
+
+  method_declaration =
+    [return_type]:type
+    [name]:identifier
+    [formals]:formal_parameter*
+    [locals]:variable_declaration*
+    [statements]:statement*
+    [return_expression]:expression;
+
+  variable_declaration =
+    [type]:type
+    [name]:identifier;
+
+  formal_parameter =
+    [type]:type
+    [name]:identifier;
+
+  type =
+    {int}
+      [name]:int |
+    {int_array}
+      [name]:int |
+    {boolean}
+      [name]:boolean |
+    {identifier}
+      [name]:identifier;
+
+  statement =
+    {block}
+      [statements]:statement* |
+    {if}
+      [condition]:expression
+      [true_statement]:statement
+      [false_statement]:statement |
+    {while}
+      [condition]:expression
+      [statement]:statement |
+    {println}
+      [value]:expression |
+    {assign}
+      [name]:identifier
+      [value]:expression |
+    {array_assign}
+      [name]:identifier
+      [index]:expression
+      [value]:expression;
+
+  expression =
+    {and}
+      [left]:expression
+      [right]:expression |
+    {less_than}
+      [left]:expression
+      [right]:expression |
+    {plus}
+      [left]:expression
+      [right]:expression |
+    {minus}
+      [left]:expression
+      [right]:expression |
+    {times}
+      [left]:expression
+      [right]:expression |
+    {array_lookup}
+      [array]:expression
+      [index]:expression |
+    {array_length}
+      [array]:expression |
+    {call}
+      [instance]:expression
+      [name]:identifier
+      [actuals]:expression* |
+    {integer}
+      [value]:int_literal |
+    {true}
+      true |
+    {false}
+      false |
+    {identifier}
+      [name]:identifier |
+    {this}
+      this |
+    {new_array}
+      [size]:expression |
+    {new_object}
+      [class_name]:identifier |
+    {not}
+      [expression]:expression;
+
+  identifier =
+    [name]: id;
