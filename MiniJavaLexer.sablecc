@@ -6,6 +6,7 @@
 
 Package
   minijava;
+
 Helpers
   unicode_input_character = [0..0xffff];
   ht                      = 0x0009; // horizontal tab
@@ -19,9 +20,10 @@ Helpers
   not_star_not_slash      = [input_character - ['*' + '/']] | line_terminator;
   digit                   = ['0'..'9'];
   letter                  = ['a'..'z'] | ['A'..'Z'];
+
 Tokens
   // KEYWORDS
-  class                   = 'class';
+  class_token             = 'class';
   public                  = 'public';
   static                  = 'static';
   void                    = 'void';
@@ -63,7 +65,7 @@ Tokens
   dot                     = '.';
 
   // LITERALS
-  integer_literal         = '-'? (digit)+;
+  integer_literal         = (digit)+;
   boolean_literal         = ('false' | 'true');
   identifier              = letter (letter | digit | '_')*;
 
@@ -74,3 +76,83 @@ Tokens
 
 Ignored Tokens
   white_space, comment;
+
+Productions
+  goal = main_class class_declaration_list;
+
+  main_class = class_token [class_name]:identifier [external_lbrace]:lbrace public static void main lparen string lbracket rbracket [arg_name]:identifier rparen lbrace statement rbrace [external_rbrace]:rbrace;
+
+  class_declaration_list = {empty} | class_declaration class_declaration_list;
+
+  class_declaration = class_token identifier inheritance lbrace var_declaration_list method_declaration_list rbrace;
+
+  inheritance = {empty} | extends identifier;
+
+  var_declaration_list = {empty} | var_declaration_list var_declaration;
+
+  var_declaration = type identifier semicolon;
+
+  method_declaration_list = {empty} | method_declaration_list method_declaration;
+
+  method_declaration = public type identifier lparen argument_list rparen lbrace var_declaration_list statement_list return boolean_expression semicolon rbrace;
+  
+  argument_list = {empty} | type identifier argument_list_tail;
+
+  argument_list_tail = {empty} | comma type identifier argument_list_tail;
+
+  type
+  =   {integer_array}    int lbracket rbracket
+  |   {boolean}          boolean
+  |   {integer}          int
+  |   {identifier}       identifier;
+
+  statement_list = {empty} | statement statement_list;
+
+  statement
+  =   {block}            lbrace statement_list rbrace
+  |   {if}               if lparen [test]:boolean_expression rparen [true]:statement else [false]:statement
+  |   {while}            while lparen boolean_expression rparen statement
+  |   {print}            print lparen boolean_expression rparen semicolon
+  |   {assignment}       identifier assign boolean_expression semicolon
+  |   {array_assignment} identifier lbracket [index]:expression rbracket assign [assignment]:boolean_expression semicolon;
+
+  boolean_expression
+  =   {and}              [lhs]:not_factor and [rhs]:not_factor
+  |   {not_factor}       not_factor;
+
+  not_factor
+  =   {not}              not boolean_factor
+  |   {boolean_factor}   boolean_factor;
+
+  boolean_factor
+  =   {boolean}          boolean_literal
+  |   {relation}         relation;
+
+  relation
+  =   {less}             [lhs]:expression less [rhs]:expression
+  |   {expression}       expression;
+
+  expression
+  =   {plus}             [lhs]:term plus [rhs]:term
+  |   {minus}            [lhs]:term minus [rhs]:term
+  |   {term}             term;
+
+  term
+  =   {mult}             [lhs]:factor mult [rhs]:factor
+  |   {factor}           factor
+  |   {neg_factor}       minus factor;
+
+  factor
+  =   {array_access}     [array]:factor lbracket [index]:expression rbracket
+  |   {length}           factor dot length
+  |   {method_call}      factor dot identifier lparen arg_list rparen
+  |   {integer}          integer_literal
+  |   {identifier}       identifier
+  |   {this}             this
+  |   {new_array}        new int lbracket expression rbracket
+  |   {new_object}       new identifier lparen rparen
+  |   {parenthesis}      lparen boolean_expression rparen;
+
+  arg_list = {empty} | boolean_expression arg_list_tail;
+
+  arg_list_tail = {empty} | comma boolean_expression arg_list_tail;
