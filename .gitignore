@@ -1,3 +1,7 @@
+# Auto generated code
+minijava/
+
+# Class bytecode files
 *.class
 
 # Mobile Tools for Java (J2ME)
