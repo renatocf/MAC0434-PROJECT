@@ -94,7 +94,7 @@ Productions
 
   method_declaration_list = {empty} | method_declaration_list method_declaration;
 
-  method_declaration = public type identifier lparen argument_list rparen lbrace var_declaration_list statement_list return expression semicolon rbrace;
+  method_declaration = public type identifier lparen argument_list rparen lbrace var_declaration_list statement_list return boolean_expression semicolon rbrace;
   
   argument_list = {empty} | type identifier argument_list_tail;
 
@@ -112,9 +112,9 @@ Productions
   =   {block}            lbrace statement_list rbrace
   |   {if}               if lparen [test]:boolean_expression rparen [true]:statement else [false]:statement
   |   {while}            while lparen boolean_expression rparen statement
-  |   {print}            print lparen expression rparen semicolon
-  |   {assignment}       identifier assign expression semicolon
-  |   {array_assignment} identifier lbracket [index]:expression rbracket assign [assignment]:expression semicolon;
+  |   {print}            print lparen boolean_expression rparen semicolon
+  |   {assignment}       identifier assign boolean_expression semicolon
+  |   {array_assignment} identifier lbracket [index]:expression rbracket assign [assignment]:boolean_expression semicolon;
 
   boolean_expression
   =   {and}              [lhs]:boolean_term and [rhs]:boolean_term
