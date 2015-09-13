@@ -78,81 +78,147 @@ Ignored Tokens
   white_space, comment;
 
 Productions
-  goal = main_class class_declaration_list;
+  goal {-> program}
+  =                  main_class [classes]:class_declaration_list
+                     {-> New program(main_class.main_class, [classes.class_decl])};
 
-  main_class = class_token [class_name]:identifier [external_lbrace]:lbrace public static void main lparen string lbracket rbracket [arg_name]:identifier rparen lbrace statement rbrace [external_rbrace]:rbrace;
+  main_class {-> main_class}
+  =                  class_token [name]:identifier [external_lbrace]:lbrace public static void main lparen string lbracket rbracket [method_parameter]:identifier rparen lbrace [statement]:statement rbrace [external_rbrace]:rbrace
+                     {-> New main_class(New ident(name), New ident(method_parameter), statement.statement)};
 
-  class_declaration_list = {empty} | class_declaration class_declaration_list;
+  class_declaration_list {-> class_decl*}
+  =   {empty}        {-> []}
+  |                  class_declaration [rest]:class_declaration_list
+                     {-> [class_declaration.class_decl, rest.class_decl]};
 
-  class_declaration = class_token identifier inheritance lbrace var_declaration_list method_declaration_list rbrace;
+  class_declaration {-> class_decl}
+  =   {extended}    class_token [name]:identifier extends [parent]:identifier lbrace [vars]:var_declaration_list [methods]:method_declaration_list rbrace
+                    {-> New class_decl.extends(New ident(name), New ident(parent), [vars.variable_declaration], [methods.method_declaration])}
+  |   {simple}      class_token [name]:identifier lbrace [vars]:var_declaration_list [methods]:method_declaration_list rbrace
+                    {-> New class_decl.simple(New ident(name), [vars.variable_declaration], [methods.method_declaration])};
 
-  inheritance = {empty} | extends identifier;
+  var_declaration_list {-> variable_declaration*}
+  =   {empty}        {-> []}
+  |                  [rest]:var_declaration_list var_declaration
+                     {-> [rest.variable_declaration, var_declaration.variable_declaration]};
 
-  var_declaration_list = {empty} | var_declaration_list var_declaration;
+  var_declaration {-> variable_declaration}
+  =                  type [name]:identifier semicolon 
+                     {-> New variable_declaration(type.type, New ident(name))};
 
-  var_declaration = type identifier semicolon;
+  method_declaration_list {-> method_declaration*}
+  =   {empty}        {-> []}
+  |                  [rest]:method_declaration_list method_declaration
+                     {-> [rest.method_declaration, method_declaration.method_declaration]};
 
-  method_declaration_list = {empty} | method_declaration_list method_declaration;
+  method_declaration {-> method_declaration}
+  =                  public [return_type]:type [name]:identifier lparen [args]:argument_list rparen lbrace [vars]:var_declaration_list [statements]:statement_list return [return_expression]:boolean_expression semicolon rbrace
+                     {-> New method_declaration(return_type.type, New ident(name), [args.formal_parameter], [vars.variable_declaration], [statements.statement], return_expression.expression)};
 
-  method_declaration = public type identifier lparen argument_list rparen lbrace var_declaration_list statement_list return boolean_expression semicolon rbrace;
+  argument_list {-> formal_parameter*}
+  =   {empty}        {-> []}
+  |                  type [name]:identifier [rest]:argument_list_tail
+                     {-> [New formal_parameter(type.type, New ident(name)), rest.formal_parameter]};
 
-  argument_list = {empty} | type identifier argument_list_tail;
+  argument_list_tail  {-> formal_parameter*}
+  =   {empty}        {-> []}
+  |                  comma type [name]:identifier [rest]:argument_list_tail
+                     {-> [New formal_parameter(type.type, New ident(name)), rest.formal_parameter]};
 
-  argument_list_tail = {empty} | comma type identifier argument_list_tail;
+  type {-> type}
+  =   {int}          [name]:int
+                     { -> New type.int(name) }
+  |   {int_array}    [name]:int lbracket rbracket
+                     { -> New type.int(name) }
+  |   {boolean}      [name]:boolean
+                     { -> New type.boolean(name) }
+  |   {identifier}   [name]:identifier
+                     { -> New type.identifier(New ident(name)) };
 
-  type
-  =   {integer_array}    int lbracket rbracket
-  |   {boolean}          boolean
-  |   {integer}          int
-  |   {identifier}       identifier;
+  statement_list {-> statement*}
+  =   {empty}        {-> []}
+  |                  statement [rest]:statement_list
+                     {-> [statement.statement, rest.statement]};
 
-  statement_list = {empty} | statement statement_list;
+  statement {-> statement}
+  =   {block}            lbrace [statements]:statement_list rbrace
+                         { -> New statement.block([statements.statement]) }
+  |   {if}               if lparen [condition]:boolean_expression rparen [true_statement]:statement else [false_statement]:statement
+                         { -> New statement.if(condition.expression, true_statement.statement, false_statement.statement) }
+  |   {while}            while lparen [condition]:boolean_expression rparen [statement]:statement
+                         { -> New statement.while(condition.expression, statement.statement) }
+  |   {println}          print lparen [value]:boolean_expression rparen semicolon
+                         { -> New statement.println(value.expression) }
+  |   {assign}           [name]:identifier assign [value]:boolean_expression semicolon
+                         { -> New statement.assign(New ident(name), value.expression) }
+  |   {array_assign}     [name]:identifier lbracket [index]:expression rbracket assign [value]:boolean_expression semicolon
+                         { -> New statement.array_assign(New ident(name), index.expression, value.expression) };
 
-  statement
-  =   {block}            lbrace statement_list rbrace
-  |   {if}               if lparen [test]:boolean_expression rparen [true]:statement else [false]:statement
-  |   {while}            while lparen boolean_expression rparen statement
-  |   {print}            print lparen boolean_expression rparen semicolon
-  |   {assignment}       identifier assign boolean_expression semicolon
-  |   {array_assignment} identifier lbracket [index]:expression rbracket assign [assignment]:boolean_expression semicolon;
-
-  boolean_expression
+  boolean_expression {-> expression}
   =   {and}              [lhs]:boolean_term and [rhs]:boolean_term
-  |   {boolean_term}     boolean_term;
+                         { -> New expression.and(lhs.expression, rhs.expression) }
+  |   {boolean_term}     boolean_term
+                         { -> boolean_term.expression };
 
-  boolean_term
-  =   {neg_relation}     not boolean_factor
-  |   {relation}         boolean_factor;
+  boolean_term {-> expression}
+  =   {not}              not boolean_factor
+                         { -> New expression.not(boolean_factor.expression) }
+  |   {relation}         boolean_factor
+                         { -> boolean_factor.expression };
 
-  boolean_factor
+  boolean_factor {-> expression}
   =   {less}             [lhs]:expression less [rhs]:expression
-  |   {expression}       expression;
+                         { -> New expression.less_than(lhs.expression, rhs.expression) }
+  |   {expression}       expression
+                         { -> expression.expression };
 
-  expression
+  expression {-> expression}
   =   {plus}             [lhs]:term plus [rhs]:term
+                         { -> New expression.plus(lhs.expression, rhs.expression) }
   |   {minus}            [lhs]:term minus [rhs]:term
-  |   {term}             term;
+                         { -> New expression.minus(lhs.expression, rhs.expression) }
+  |   {term}             term
+                         { -> term.expression };
 
-  term
-  =   {mult}             [lhs]:factor mult [rhs]:factor
+  term {-> expression}
+  =   {times}            [lhs]:factor mult [rhs]:factor
+                         { -> New expression.times(lhs.expression, rhs.expression) }
   |   {factor}           factor
-  |   {neg_factor}       minus factor;
+                         { -> factor.expression }
+  |   {neg_factor}       minus factor
+                         { -> New expression.negative(factor.expression) };
 
-  factor
-  =   {array_access}     [array]:factor lbracket [index]:expression rbracket
-  |   {length}           factor dot length
-  |   {method_call}      factor dot identifier lparen arg_list rparen
-  |   {integer}          integer_literal
+  factor {-> expression}
+  =   {array_lookup}     [array]:factor lbracket [index]:expression rbracket
+                         { -> New expression.array_lookup(array.expression, index.expression) }
+  |   {array_length}     [array]:factor dot length
+                         { -> New expression.array_length(array.expression) }
+  |   {call}             [instance]:factor dot [name]:identifier lparen [actuals]:arg_list rparen
+                         { -> New expression.call(instance.expression, New ident(name), [actuals.expression]) }
+  |   {integer}          [value]:integer_literal
+                         { -> New expression.integer(value) }
   |   {boolean}          boolean_literal
-  |   {identifier}       identifier
+                         { -> New expression.boolean(boolean_literal)}
+  |   {identifier}       [name]:identifier
+                         { -> New expression.identifier(New ident(name)) }
   |   {this}             this
-  |   {new_array}        new int lbracket expression rbracket
-  |   {new_object}       new identifier lparen rparen
-  |   {parenthesis}      lparen boolean_expression rparen;
+                         { -> New expression.this(this) }
+  |   {new_array}        new int lbracket [size]:expression rbracket
+                         { -> New expression.new_array(size.expression) }
+  |   {new_object}       new [class_name]:identifier lparen rparen
+                         { -> New expression.new_object(New ident(class_name)) }
+  |   {parenthesis}      lparen boolean_expression rparen
+                         { -> boolean_expression.expression };
 
-  arg_list = {empty} | boolean_expression arg_list_tail;
+  arg_list {-> expression*}
+  =   {empty}        {-> []}
+  |                  boolean_expression [rest]:arg_list_tail
+                     {-> [boolean_expression.expression, rest.expression]};
 
-  arg_list_tail = {empty} | comma boolean_expression arg_list_tail;
+  arg_list_tail {-> expression*}
+  =   {empty}        {-> []}
+  |                  comma boolean_expression [rest]:arg_list_tail
+                     {-> [boolean_expression.expression, rest.expression]};
 
 Abstract Syntax Tree
 
@@ -161,24 +227,24 @@ Abstract Syntax Tree
     [class_decl]:class_decl*;
 
   main_class =
-    [name]:identifier
-    [method_parameter]:identifier
+    [name]:ident
+    [method_parameter]:ident
     [statement]:statement;
 
   class_decl =
     {extends}
-      [name]:identifier
-      [parent]:identifier
+      [name]:ident
+      [parent]:ident
       [variables]:variable_declaration*
       [methods]:method_declaration* |
     {simple}
-      [name]:identifier
+      [name]:ident
       [variables]:variable_declaration*
       [methods]:method_declaration*;
 
   method_declaration =
     [return_type]:type
-    [name]:identifier
+    [name]:ident
     [formals]:formal_parameter*
     [locals]:variable_declaration*
     [statements]:statement*
@@ -186,11 +252,11 @@ Abstract Syntax Tree
 
   variable_declaration =
     [type]:type
-    [name]:identifier;
+    [name]:ident;
 
   formal_parameter =
     [type]:type
-    [name]:identifier;
+    [name]:ident;
 
   type =
     {int}
@@ -200,7 +266,7 @@ Abstract Syntax Tree
     {boolean}
       [name]:boolean |
     {identifier}
-      [name]:identifier;
+      [name]:ident;
 
   statement =
     {block}
@@ -215,10 +281,10 @@ Abstract Syntax Tree
     {println}
       [value]:expression |
     {assign}
-      [name]:identifier
+      [name]:ident
       [value]:expression |
     {array_assign}
-      [name]:identifier
+      [name]:ident
       [index]:expression
       [value]:expression;
 
@@ -235,6 +301,8 @@ Abstract Syntax Tree
     {minus}
       [left]:expression
       [right]:expression |
+    {negative}
+      [value]:expression |
     {times}
       [left]:expression
       [right]:expression |
@@ -245,24 +313,22 @@ Abstract Syntax Tree
       [array]:expression |
     {call}
       [instance]:expression
-      [name]:identifier
+      [name]:ident
       [actuals]:expression* |
     {integer}
-      [value]:int_literal |
-    {true}
-      true |
-    {false}
-      false |
+      [value]:integer_literal |
+    {boolean}
+      [value]:boolean_literal |
     {identifier}
-      [name]:identifier |
+      [name]:ident |
     {this}
       this |
     {new_array}
       [size]:expression |
     {new_object}
-      [class_name]:identifier |
+      [class_name]:ident |
     {not}
       [expression]:expression;
 
-  identifier =
-    [name]: id;
+  ident =
+    [name]: identifier;
