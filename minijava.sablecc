@@ -185,9 +185,7 @@ Productions
   =   {times}            [lhs]:factor mult [rhs]:term
                          { -> New expression.times(lhs.expression, rhs.expression) }
   |   {factor}           factor
-                         { -> factor.expression }
-  |   {neg_factor}       minus factor
-                         { -> New expression.negative(factor.expression) };
+                         { -> factor.expression };
 
   factor {-> expression}
   =   {array_lookup}     [array]:factor lbracket [index]:expression rbracket
@@ -304,8 +302,6 @@ Abstract Syntax Tree
     {minus}
       [left]:expression
       [right]:expression |
-    {negative}
-      [value]:expression |
     {times}
       [left]:expression
       [right]:expression |
