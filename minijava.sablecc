@@ -156,33 +156,33 @@ Productions
                          { -> New statement.array_assign(New id(name), index.expression, value.expression) };
 
   boolean_expression {-> expression}
-  =   {and}              [lhs]:boolean_term and [rhs]:boolean_term
+  =   {and}              [lhs]:boolean_term and [rhs]:boolean_expression
                          { -> New expression.and(lhs.expression, rhs.expression) }
   |   {boolean_term}     boolean_term
                          { -> boolean_term.expression };
 
   boolean_term {-> expression}
-  =   {not}              not boolean_factor
-                         { -> New expression.not(boolean_factor.expression) }
+  =   {not}              not boolean_term
+                         { -> New expression.not(boolean_term.expression) }
   |   {relation}         boolean_factor
                          { -> boolean_factor.expression };
 
   boolean_factor {-> expression}
-  =   {less}             [lhs]:expression less [rhs]:expression
+  =   {less}             [lhs]:expression less [rhs]:boolean_factor
                          { -> New expression.less_than(lhs.expression, rhs.expression) }
   |   {expression}       expression
                          { -> expression.expression };
 
   expression {-> expression}
-  =   {plus}             [lhs]:term plus [rhs]:term
+  =   {plus}             [lhs]:term plus [rhs]:expression
                          { -> New expression.plus(lhs.expression, rhs.expression) }
-  |   {minus}            [lhs]:term minus [rhs]:term
+  |   {minus}            [lhs]:term minus [rhs]:expression
                          { -> New expression.minus(lhs.expression, rhs.expression) }
   |   {term}             term
                          { -> term.expression };
 
   term {-> expression}
-  =   {times}            [lhs]:factor mult [rhs]:factor
+  =   {times}            [lhs]:factor mult [rhs]:term
                          { -> New expression.times(lhs.expression, rhs.expression) }
   |   {factor}           factor
                          { -> factor.expression }
