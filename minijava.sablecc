@@ -66,7 +66,8 @@ Tokens
 
   // LITERALS
   integer_literal         = (digit)+;
-  boolean_literal         = ('false' | 'true');
+  true                    = 'true';
+  false                   = 'false';
   identifier              = letter (letter | digit | '_')*;
 
   // WS
@@ -84,7 +85,7 @@ Productions
 
   main_class {-> main_class}
   =                  class_token [name]:identifier [external_lbrace]:lbrace public static void main lparen string lbracket rbracket [method_parameter]:identifier rparen lbrace [statement]:statement rbrace [external_rbrace]:rbrace
-                     {-> New main_class(New ident(name), New ident(method_parameter), statement.statement)};
+                     {-> New main_class(New id(name), New id(method_parameter), statement.statement)};
 
   class_declaration_list {-> class_decl*}
   =   {empty}        {-> []}
@@ -93,9 +94,9 @@ Productions
 
   class_declaration {-> class_decl}
   =   {extended}    class_token [name]:identifier extends [parent]:identifier lbrace [vars]:var_declaration_list [methods]:method_declaration_list rbrace
-                    {-> New class_decl.extends(New ident(name), New ident(parent), [vars.variable_declaration], [methods.method_declaration])}
+                    {-> New class_decl.extends(New id(name), New id(parent), [vars.variable_declaration], [methods.method_declaration])}
   |   {simple}      class_token [name]:identifier lbrace [vars]:var_declaration_list [methods]:method_declaration_list rbrace
-                    {-> New class_decl.simple(New ident(name), [vars.variable_declaration], [methods.method_declaration])};
+                    {-> New class_decl.simple(New id(name), [vars.variable_declaration], [methods.method_declaration])};
 
   var_declaration_list {-> variable_declaration*}
   =   {empty}        {-> []}
@@ -103,8 +104,8 @@ Productions
                      {-> [rest.variable_declaration, var_declaration.variable_declaration]};
 
   var_declaration {-> variable_declaration}
-  =                  type [name]:identifier semicolon 
-                     {-> New variable_declaration(type.type, New ident(name))};
+  =                  type [name]:identifier semicolon
+                     {-> New variable_declaration(type.type, New id(name))};
 
   method_declaration_list {-> method_declaration*}
   =   {empty}        {-> []}
@@ -113,17 +114,17 @@ Productions
 
   method_declaration {-> method_declaration}
   =                  public [return_type]:type [name]:identifier lparen [args]:argument_list rparen lbrace [vars]:var_declaration_list [statements]:statement_list return [return_expression]:boolean_expression semicolon rbrace
-                     {-> New method_declaration(return_type.type, New ident(name), [args.formal_parameter], [vars.variable_declaration], [statements.statement], return_expression.expression)};
+                     {-> New method_declaration(return_type.type, New id(name), [args.formal_parameter], [vars.variable_declaration], [statements.statement], return_expression.expression)};
 
   argument_list {-> formal_parameter*}
   =   {empty}        {-> []}
   |                  type [name]:identifier [rest]:argument_list_tail
-                     {-> [New formal_parameter(type.type, New ident(name)), rest.formal_parameter]};
+                     {-> [New formal_parameter(type.type, New id(name)), rest.formal_parameter]};
 
   argument_list_tail  {-> formal_parameter*}
   =   {empty}        {-> []}
   |                  comma type [name]:identifier [rest]:argument_list_tail
-                     {-> [New formal_parameter(type.type, New ident(name)), rest.formal_parameter]};
+                     {-> [New formal_parameter(type.type, New id(name)), rest.formal_parameter]};
 
   type {-> type}
   =   {int}          [name]:int
@@ -133,7 +134,7 @@ Productions
   |   {boolean}      [name]:boolean
                      { -> New type.boolean(name) }
   |   {identifier}   [name]:identifier
-                     { -> New type.identifier(New ident(name)) };
+                     { -> New type.identifier(New id(name)) };
 
   statement_list {-> statement*}
   =   {empty}        {-> []}
@@ -150,9 +151,9 @@ Productions
   |   {println}          print lparen [value]:boolean_expression rparen semicolon
                          { -> New statement.println(value.expression) }
   |   {assign}           [name]:identifier assign [value]:boolean_expression semicolon
-                         { -> New statement.assign(New ident(name), value.expression) }
+                         { -> New statement.assign(New id(name), value.expression) }
   |   {array_assign}     [name]:identifier lbracket [index]:expression rbracket assign [value]:boolean_expression semicolon
-                         { -> New statement.array_assign(New ident(name), index.expression, value.expression) };
+                         { -> New statement.array_assign(New id(name), index.expression, value.expression) };
 
   boolean_expression {-> expression}
   =   {and}              [lhs]:boolean_term and [rhs]:boolean_term
@@ -194,19 +195,21 @@ Productions
   |   {array_length}     [array]:factor dot length
                          { -> New expression.array_length(array.expression) }
   |   {call}             [instance]:factor dot [name]:identifier lparen [actuals]:arg_list rparen
-                         { -> New expression.call(instance.expression, New ident(name), [actuals.expression]) }
+                         { -> New expression.call(instance.expression, New id(name), [actuals.expression]) }
   |   {integer}          [value]:integer_literal
                          { -> New expression.integer(value) }
-  |   {boolean}          boolean_literal
-                         { -> New expression.boolean(boolean_literal)}
+  |   {true}             true
+                         { -> New expression.true(true)}
+  |   {false}            false
+                         { -> New expression.false(false)}
   |   {identifier}       [name]:identifier
-                         { -> New expression.identifier(New ident(name)) }
+                         { -> New expression.identifier(New id(name)) }
   |   {this}             this
                          { -> New expression.this(this) }
   |   {new_array}        new int lbracket [size]:expression rbracket
                          { -> New expression.new_array(size.expression) }
   |   {new_object}       new [class_name]:identifier lparen rparen
-                         { -> New expression.new_object(New ident(class_name)) }
+                         { -> New expression.new_object(New id(class_name)) }
   |   {parenthesis}      lparen boolean_expression rparen
                          { -> boolean_expression.expression };
 
@@ -227,24 +230,24 @@ Abstract Syntax Tree
     [class_decl]:class_decl*;
 
   main_class =
-    [name]:ident
-    [method_parameter]:ident
+    [name]:id
+    [method_parameter]:id
     [statement]:statement;
 
   class_decl =
     {extends}
-      [name]:ident
-      [parent]:ident
+      [name]:id
+      [parent]:id
       [variables]:variable_declaration*
       [methods]:method_declaration* |
     {simple}
-      [name]:ident
+      [name]:id
       [variables]:variable_declaration*
       [methods]:method_declaration*;
 
   method_declaration =
     [return_type]:type
-    [name]:ident
+    [name]:id
     [formals]:formal_parameter*
     [locals]:variable_declaration*
     [statements]:statement*
@@ -252,11 +255,11 @@ Abstract Syntax Tree
 
   variable_declaration =
     [type]:type
-    [name]:ident;
+    [name]:id;
 
   formal_parameter =
     [type]:type
-    [name]:ident;
+    [name]:id;
 
   type =
     {int}
@@ -266,7 +269,7 @@ Abstract Syntax Tree
     {boolean}
       [name]:boolean |
     {identifier}
-      [name]:ident;
+      [name]:id;
 
   statement =
     {block}
@@ -281,10 +284,10 @@ Abstract Syntax Tree
     {println}
       [value]:expression |
     {assign}
-      [name]:ident
+      [name]:id
       [value]:expression |
     {array_assign}
-      [name]:ident
+      [name]:id
       [index]:expression
       [value]:expression;
 
@@ -313,22 +316,24 @@ Abstract Syntax Tree
       [array]:expression |
     {call}
       [instance]:expression
-      [name]:ident
+      [name]:id
       [actuals]:expression* |
     {integer}
       [value]:integer_literal |
-    {boolean}
-      [value]:boolean_literal |
+    {true}
+      true |
+    {false}
+      false |
     {identifier}
-      [name]:ident |
+      [name]:id |
     {this}
       this |
     {new_array}
       [size]:expression |
     {new_object}
-      [class_name]:ident |
+      [class_name]:id |
     {not}
       [expression]:expression;
 
-  ident =
+  id =
     [name]: identifier;

@@ -156,12 +156,6 @@ public class PrettyPrinter extends DepthFirstAdapter {
     System.out.println();
   }
 
-  public void inANegativeExpression(ANegativeExpression node) {
-    tab++;
-    printNode(node);
-    System.out.println(": " + node.getValue());
-  }
-
   public void inAArrayLookupExpression(AArrayLookupExpression node) {
     tab++;
     printNode(node);
@@ -186,7 +180,7 @@ public class PrettyPrinter extends DepthFirstAdapter {
     System.out.println(": " + node.getValue());
   }
 
-  /*public void inATrueExpression(ATrueExpression node) {
+  public void inATrueExpression(ATrueExpression node) {
     tab++;
     printNode(node);
     System.out.println();
@@ -196,12 +190,6 @@ public class PrettyPrinter extends DepthFirstAdapter {
     tab++;
     printNode(node);
     System.out.println();
-  }*/
-
-  public void inABooleanExpression(ABooleanExpression node) {
-    tab++;
-    printNode(node);
-    System.out.println(": " + node.getValue());
   }
 
   public void inAIdentifierExpression(AIdentifierExpression node) {
@@ -234,7 +222,7 @@ public class PrettyPrinter extends DepthFirstAdapter {
     System.out.println();
   }
 
-  public void inAIdent(AIdent node) {
+  public void inAId(AId node) {
     tab++;
     printNode(node);
     System.out.println(": " + node.getName());
