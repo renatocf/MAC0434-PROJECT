@@ -1,6 +1,7 @@
 import minijava.parser.*;
 import minijava.lexer.*;
 import minijava.node.*;
+import visitor.*;
 import java.io.*;
 
 public class Main {
@@ -10,9 +11,23 @@ public class Main {
       Lexer lexer = new Lexer(new PushbackReader(new InputStreamReader(System.in), 1024));
       Parser parser = new Parser(lexer);
       Start ast = parser.parse();
-      ast.apply(new PrettyPrinter());
+
+      System.out.println("Construindo a tabela de simbolos...");
+
+      //Build the symbol table
+      BuildSymbolTableAnalysis vb = new BuildSymbolTableAnalysis();
+      ast.apply(vb);
+
+      System.out.println("Analisando tipos...");
+
+      //Type checking
+      TypeCheckAnalysis vt = new TypeCheckAnalysis(vb.getSymTab());
+      ast.apply(vt);
+
+      System.out.println("Ok!!!");
+
     } catch(Exception e) {
-      System.out.println(e.getMessage());
+      System.out.println("Error: " + e.getMessage());
     }
   }
 }
