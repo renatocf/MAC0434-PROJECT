@@ -36,8 +36,6 @@ public class SymbolTable {
         return hashtable.containsKey(id);
     }
 
-
-
     public PType getVarType(Method m, Class c, String id) {
         id = id.replaceAll("\\s+","");
         if(m != null) {
@@ -155,6 +153,10 @@ public class SymbolTable {
         return false;
     }
 
+    public String toString() {
+        return hashtable.toString();
+    }
+
 }//SymbolTable
 
 class Class {
@@ -235,6 +237,10 @@ class Class {
     public String parent() {
         return parent;
     }
+
+    public String toString() {
+        return "\n  " + globals.toString() + "\n  " + methods.toString().replaceAll(",", "\n    ")  + "\n";
+    }
 } // Class
 
 class Variable {
@@ -252,6 +258,9 @@ class Variable {
 
     public PType type() { return type; }
 
+    public String toString() {
+        return " " + type.toString() + id.toString();
+    }
 } // Variable
 
 class Method {
@@ -334,6 +343,13 @@ class Method {
                 return (Variable)(params.elementAt(i));
 
         return null;
+    }
+
+    public String toString() {
+        return " " + type.toString()
+            + id.toString()
+            + params.toString()
+            + vars.toString();
     }
 
 } // Method
