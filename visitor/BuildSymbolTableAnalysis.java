@@ -54,7 +54,18 @@ public class BuildSymbolTableAnalysis extends DepthFirstAdapter {
 
   @Override
   public void caseASimpleClassDecl(ASimpleClassDecl node) {
-       /* COMPLETAR */
+    if (!symbolTable.addClass(node.getName().toString(), null)) {
+      System.out.println("Class " +  node.getName().toString() + "is already defined" );
+      System.exit(-1);
+    }
+    currClass = symbolTable.getClass(node.getName().toString());
+    for(PVariableDeclaration e : new ArrayList<PVariableDeclaration>(node.getVariables())) {
+      e.apply(this);
+    }
+    for(PMethodDeclaration e : new ArrayList<PMethodDeclaration>(node.getMethods())) {
+      e.apply(this);
+    }
+    setType(null);
   }
 
   @Override
@@ -75,17 +86,56 @@ public class BuildSymbolTableAnalysis extends DepthFirstAdapter {
 
   @Override
   public void caseAVariableDeclaration(AVariableDeclaration node) {
-       /* COMPLETAR */
+    node.getType().apply(this);
+
+    if (currMethod == null) {
+      if (!currClass.addVar(node.getName().toString(), getType())) {
+        System.out.println("Variable " +  node.getName().toString() + "is already defined" );
+        System.exit(-1);
+      }
+    }
+    else {
+      if (!currMethod.addVar(node.getName().toString(), getType())) {
+        System.out.println("Variable " +  node.getName().toString() + "is already defined" );
+        System.exit(-1);
+      }
+    }
+
+    setType(null);
   }
 
   @Override
   public void caseAMethodDeclaration(AMethodDeclaration node) {
-       /* COMPLETAR */
+    node.getReturnType().apply(this);
+    if (!currClass.addMethod(node.getName().toString(), getType())) {
+      System.out.println("Method " +  node.getName().toString() + "is already defined" );
+      System.exit(-1);
+    }
+
+    currMethod = currClass.getMethod(node.getName().toString());
+
+    for(PFormalParameter e : new ArrayList<PFormalParameter>(node.getFormals())) {
+      e.apply(this);
+    }
+    for(PVariableDeclaration e : new ArrayList<PVariableDeclaration>(node.getLocals())) {
+      e.apply(this);
+    }
+    for(PStatement e : new ArrayList<PStatement>(node.getStatements())) {
+      e.apply(this);
+    }
+
+    currMethod = null;
+    setType(null);
   }
 
   @Override
   public void caseAFormalParameter(AFormalParameter node) {
-      /* COMPLETAR */
+    node.getType().apply(this);
+    if (!currMethod.addParam(node.getName().toString(), getType())) {
+      System.out.println("Method " +  node.getName().toString() + "is already defined" );
+      System.exit(-1);
+    }
+    setType(null);
   }
 
   @Override
@@ -95,17 +145,17 @@ public class BuildSymbolTableAnalysis extends DepthFirstAdapter {
 
   @Override
   public void caseABooleanType(ABooleanType node) {
-      /* COMPLETAR */
+    setType(node);
   }
 
   @Override
   public void caseAIntType(AIntType node) {
-      /* COMPLETAR */
+    setType(node);
   }
 
   @Override
   public void caseAIdentifierType(AIdentifierType node) {
-      /* COMPLETAR */
+    setType(node);
   }
 
   @Override
