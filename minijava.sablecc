@@ -130,7 +130,7 @@ Productions
   =   {int}          [name]:int
                      { -> New type.int(name) }
   |   {int_array}    [name]:int lbracket rbracket
-                     { -> New type.int(name) }
+                     { -> New type.int_array(name) }
   |   {boolean}      [name]:boolean
                      { -> New type.boolean(name) }
   |   {identifier}   [name]:id
