@@ -14,19 +14,31 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
     symbolTable = s;
   }
 
+  // Getters
+  public Class getCurrClass() {
+    return currClass;
+  }
+
+  public Method getCurrMethod() {
+    return currMethod;
+  }
+
+  public SymbolTable getSymbolTable() {
+    return symbolTable;
+  }
+
   @Override
   public void caseAProgram(AProgram node) {
     node.getMainClass().apply(this);
-    List<PClassDecl> copy = new ArrayList<PClassDecl>(node.getClassDecl());
-    for (PClassDecl e : copy) {
-        e.apply(this);
+    for (PClassDecl e : node.getClassDecl()) {
+      e.apply(this);
     }
   }
 
   @Override
   public void caseAMainClass(AMainClass node) {
-    String i1 = node.getName().toString();
-    currClass = symbolTable.getClass(i1);
+    String className = node.getName().toString();
+    currClass = symbolTable.getClass(className);
 
     node.getMethodParameter().apply(this);
     node.getStatement().apply(this);
@@ -34,67 +46,193 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
 
   @Override
   public void caseASimpleClassDecl(ASimpleClassDecl node) {
-       /* COMPLETAR */
+    String className = node.getName().toString();
+    currClass = symbolTable.getClass(className);
+
+    for(PVariableDeclaration e : node.getVariables()) {
+      e.apply(this);
+    }
+    for(PMethodDeclaration e : node.getMethods()) {
+      e.apply(this);
+    }
+
+    currClass = null;
   }
 
   @Override
   public void caseAExtendsClassDecl(AExtendsClassDecl node) {
-    String id = node.getName().toString();
-    currClass = symbolTable.getClass(id);
+    String className = node.getName().toString();
+    currClass = symbolTable.getClass(className);
+
     node.getParent().apply(this);
-    for(PVariableDeclaration e : new ArrayList<PVariableDeclaration>(node.getVariables())) {
+    for(PVariableDeclaration e : node.getVariables()) {
       e.apply(this);
     }
-    for(PMethodDeclaration e : new ArrayList<PMethodDeclaration>(node.getMethods())) {
+    for(PMethodDeclaration e : node.getMethods()) {
       e.apply(this);
     }
+
+    currClass = null;
   }
 
   @Override
   public void caseAVariableDeclaration(AVariableDeclaration node) {
-        /* COMPLETAR */
+    PType type = node.getType();
+
+    if (! (type instanceof AIntType)
+    &&  ! (type instanceof ABooleanType)
+    &&  ! (type instanceof AIntArrayType)
+    &&  ! (type instanceof AIdentifierType)
+    &&  ! (symbolTable.containsClass(((AIdentifierType) type).getName().toString())) )
+      error(node, "Variable type " + type.toString() + " not declared");
   }
 
   @Override
   public void caseAMethodDeclaration(AMethodDeclaration node) {
-        /* COMPLETAR */
+    String methodName = node.getName().toString();
+    currMethod = symbolTable.getMethod(methodName, currClass.getId());
+
+    for(PFormalParameter e : node.getFormals()) {
+      e.apply(this);
+    }
+    for(PVariableDeclaration e : node.getLocals()) {
+      e.apply(this);
+    }
+    for(PStatement e : node.getStatements()) {
+      e.apply(this);
+    }
+
+    currMethod = null;
   }
 
   @Override
   public void caseAFormalParameter(AFormalParameter node) {
-        /* COMPLETAR */
+    PType type = node.getType();
+
+    if (! (type instanceof AIntType)
+    &&  ! (type instanceof ABooleanType)
+    &&  ! (type instanceof AIntArrayType)
+    &&  ! (type instanceof AIdentifierType)
+    &&  ! (symbolTable.containsClass(((AIdentifierType) type).getName().toString())) )
+      error(node, "Parameter type " + node.getType().toString() + " not declared");
   }
 
   @Override
   public void caseAIfStatement(AIfStatement node) {
-    TypeCheckExpAnalysis v = new TypeCheckExpAnalysis();
+    TypeCheckExpAnalysis v = new TypeCheckExpAnalysis(this);
     node.getCondition().apply(v);
-    if (! (v.getType() instanceof ABooleanType) ) {
-       System.out.println("The condition of while must be of type boolean");
-       System.exit(-1);
-    }
+
+    if (! (v.getType() instanceof ABooleanType) )
+      error(node, "The condition of an if must be of type boolean");
+
     node.getTrueStatement().apply(this);
     node.getFalseStatement().apply(this);
   }
 
   @Override
   public void caseAWhileStatement(AWhileStatement node) {
-        /* COMPLETAR */
+    TypeCheckExpAnalysis v = new TypeCheckExpAnalysis(this);
+    node.getCondition().apply(v);
+
+    if (! (v.getType() instanceof ABooleanType) )
+       error(node, "The condition of a while must be of type boolean");
+
+    node.getStatement().apply(this);
   }
 
   @Override
   public void caseAPrintlnStatement(APrintlnStatement node) {
-        /* COMPLETAR */
+    TypeCheckExpAnalysis v = new TypeCheckExpAnalysis(this);
+    node.getValue().apply(v);
+
+    if (! (v.getType() instanceof AIntType)
+    &&  ! (v.getType() instanceof ABooleanType) )
+       error(node, "A System.out.println can only print booleans and ints");
   }
 
   @Override
   public void caseAAssignStatement(AAssignStatement node) {
-        /* COMPLETAR */
+    String lvalName = node.getName().toString();
+
+    PType lvalType = null;
+    if (currMethod.containsVar(lvalName)) {
+      lvalType = currMethod.getVar(lvalName).type();
+    }
+    else if (currMethod.containsParam(lvalName)) {
+      lvalType = currMethod.getParam(lvalName).type();
+    }
+    else if (currClass.containsVar(lvalName)) {
+      lvalType = currClass.getVar(lvalName).type();
+    }
+    else {
+      error(node, "Variable " + lvalName + " not declared");
+    }
+
+    TypeCheckExpAnalysis vRval = new TypeCheckExpAnalysis(this);
+    node.getValue().apply(vRval);
+
+    PType rvalType = vRval.getType();
+
+    if (! (lvalType instanceof AIntType && rvalType instanceof AIntType)
+    &&  ! (lvalType instanceof ABooleanType && rvalType instanceof ABooleanType)
+    &&  ! (lvalType instanceof AIntArrayType && rvalType instanceof AIntArrayType)) {
+      Class assigned = symbolTable.getClass(lvalType.toString());
+      Class assignee = symbolTable.getClass(rvalType.toString());
+      if (!isValidAssignment(assigned, assignee))
+        error(node, "Incompatible types on assignment");
+    }
   }
 
   @Override
   public void caseAArrayAssignStatement(AArrayAssignStatement node) {
-        /* COMPLETAR */
+    TypeCheckExpAnalysis vIndex = new TypeCheckExpAnalysis(this);
+    node.getIndex().apply(vIndex);
+    if (! (vIndex.getType() instanceof AIntType) )
+       error(node, "Index must be of type integer");
+
+    PType lvalType = null;
+    if (currMethod.containsVar(node.getName().toString())) {
+      lvalType = currMethod.getVar(node.getName().toString()).type();
+    }
+    else if (currMethod.containsParam(node.getName().toString())) {
+      lvalType = currMethod.getParam(node.getName().toString()).type();
+    }
+    else if (currClass.containsVar(node.getName().toString())) {
+      lvalType = currClass.getVar(node.getName().toString()).type();
+    }
+    else {
+      error(node, "Variable " + node.getName().toString() + " not declared");
+    }
+
+    TypeCheckExpAnalysis vRval = new TypeCheckExpAnalysis(this);
+    node.getValue().apply(vRval);
+
+    PType rvalType = vRval.getType();
+
+    if (! (lvalType instanceof AIntType && rvalType instanceof AIntType)
+    &&  ! (lvalType instanceof ABooleanType && rvalType instanceof ABooleanType)
+    &&  ! (lvalType instanceof AIntArrayType && rvalType instanceof AIntType)) {
+      Class assigned = symbolTable.getClass(lvalType.toString());
+      Class assignee = symbolTable.getClass(rvalType.toString());
+      if (!isValidAssignment(assigned, assignee))
+        error(node, "Incompatible types on assignment");
+    }
   }
 
+  // Auxiliar methods
+  private boolean isValidAssignment(Class assigned, Class assignee) {
+    if (assigned == null) return false;
+    boolean isSameClass = assigned.type().equals(assignee.type());
+    return isSameClass
+      || isValidAssignment(symbolTable.getClass(assigned.parent()), assignee);
+  }
+
+  private void error(Node node, String msg) {
+    System.err.println(msg);
+
+    System.err.println();
+    System.err.println("Error on AST subtree:");
+    node.apply(new PrettyPrinter());
+    System.exit(-1);
+  }
 }
