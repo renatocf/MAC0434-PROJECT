@@ -31,22 +31,26 @@ public class BuildSymbolTableAnalysis extends DepthFirstAdapter {
   @Override
   public void caseAProgram(AProgram node) {
     node.getMainClass().apply(this);
-    List<PClassDecl> copy = new ArrayList<PClassDecl>(node.getClassDecl());
-    for (PClassDecl e : copy) {
-        e.apply(this);
+    for (PClassDecl e : node.getClassDecl()) {
+      e.apply(this);
     }
     setType(null);
   }
 
   @Override
   public void caseAMainClass(AMainClass node) {
-    symbolTable.addClass(node.getName().toString(), null);
-    currClass = symbolTable.getClass(node.getName().toString());
+    String className = node.getName().toString();
 
-    currMethod = new Method("main", new AIdentifierType(new AIdentifier(new TId("void"))));
-    currMethod.addVar(node.getMethodParameter().toString(), new AIdentifierType(new AIdentifier(new TId("String[]"))));
+    symbolTable.addClass(className, null);
+    currClass = symbolTable.getClass(className);
+
+    currMethod = new Method(
+      "main", new AIdentifierType(new AIdentifier(new TId("void"))));
+    currMethod.addVar(
+      node.getMethodParameter().toString(),
+      new AIdentifierType(new AIdentifier(new TId("String[]"))));
+
     node.getStatement().apply(this);
-
     currMethod = null;
 
     setType(null);
@@ -54,15 +58,16 @@ public class BuildSymbolTableAnalysis extends DepthFirstAdapter {
 
   @Override
   public void caseASimpleClassDecl(ASimpleClassDecl node) {
-    if (!symbolTable.addClass(node.getName().toString(), null)) {
-      System.out.println("Class " +  node.getName().toString() + "is already defined" );
-      System.exit(-1);
-    }
-    currClass = symbolTable.getClass(node.getName().toString());
-    for(PVariableDeclaration e : new ArrayList<PVariableDeclaration>(node.getVariables())) {
+    String className = node.getName().toString();
+
+    if (!symbolTable.addClass(className, null))
+      error(node, "Class " + className + "is already defined" );
+
+    currClass = symbolTable.getClass(className);
+    for(PVariableDeclaration e : node.getVariables()) {
       e.apply(this);
     }
-    for(PMethodDeclaration e : new ArrayList<PMethodDeclaration>(node.getMethods())) {
+    for(PMethodDeclaration e : node.getMethods()) {
       e.apply(this);
     }
     setType(null);
@@ -70,15 +75,16 @@ public class BuildSymbolTableAnalysis extends DepthFirstAdapter {
 
   @Override
   public void caseAExtendsClassDecl(AExtendsClassDecl node) {
-    if (!symbolTable.addClass(node.getName().toString(), node.getParent().toString())) {
-      System.out.println("Class " +  node.getName().toString() + "is already defined" );
-      System.exit(-1);
-    }
-    currClass = symbolTable.getClass(node.getName().toString());
-    for(PVariableDeclaration e : new ArrayList<PVariableDeclaration>(node.getVariables())) {
+    String className = node.getName().toString();
+
+    if (!symbolTable.addClass(className, node.getParent().toString()))
+      error(node, "Class " + className + "is already defined" );
+
+    currClass = symbolTable.getClass(className);
+    for(PVariableDeclaration e : node.getVariables()) {
       e.apply(this);
     }
-    for(PMethodDeclaration e : new ArrayList<PMethodDeclaration>(node.getMethods())) {
+    for(PMethodDeclaration e : node.getMethods()) {
       e.apply(this);
     }
     setType(null);
@@ -86,41 +92,34 @@ public class BuildSymbolTableAnalysis extends DepthFirstAdapter {
 
   @Override
   public void caseAVariableDeclaration(AVariableDeclaration node) {
+    String varName = node.getName().toString();
+
     node.getType().apply(this);
 
-    if (currMethod == null) {
-      if (!currClass.addVar(node.getName().toString(), getType())) {
-        System.out.println("Variable " +  node.getName().toString() + "is already defined" );
-        System.exit(-1);
-      }
-    }
-    else {
-      if (!currMethod.addVar(node.getName().toString(), getType())) {
-        System.out.println("Variable " +  node.getName().toString() + "is already defined" );
-        System.exit(-1);
-      }
-    }
+    if ((currMethod == null && !currClass.addVar(varName, getType()))
+    ||  (currMethod != null && !currMethod.addVar(varName, getType())))
+      error(node, "Variable " + varName + "is already defined" );
 
     setType(null);
   }
 
   @Override
   public void caseAMethodDeclaration(AMethodDeclaration node) {
+    String methodName = node.getName().toString();
+
     node.getReturnType().apply(this);
-    if (!currClass.addMethod(node.getName().toString(), getType())) {
-      System.out.println("Method " +  node.getName().toString() + "is already defined" );
-      System.exit(-1);
-    }
+    if (!currClass.addMethod(methodName, getType()))
+      error(node, "Method " + methodName + "is already defined" );
 
-    currMethod = currClass.getMethod(node.getName().toString());
+    currMethod = currClass.getMethod(methodName);
 
-    for(PFormalParameter e : new ArrayList<PFormalParameter>(node.getFormals())) {
+    for(PFormalParameter e : node.getFormals()) {
       e.apply(this);
     }
-    for(PVariableDeclaration e : new ArrayList<PVariableDeclaration>(node.getLocals())) {
+    for(PVariableDeclaration e : node.getLocals()) {
       e.apply(this);
     }
-    for(PStatement e : new ArrayList<PStatement>(node.getStatements())) {
+    for(PStatement e : node.getStatements()) {
       e.apply(this);
     }
 
@@ -130,11 +129,12 @@ public class BuildSymbolTableAnalysis extends DepthFirstAdapter {
 
   @Override
   public void caseAFormalParameter(AFormalParameter node) {
+    String paramName = node.getName().toString();
+
     node.getType().apply(this);
-    if (!currMethod.addParam(node.getName().toString(), getType())) {
-      System.out.println("Method " +  node.getName().toString() + "is already defined" );
-      System.exit(-1);
-    }
+    if (!currMethod.addParam(paramName, getType()))
+      error(node, "Method " + paramName + "is already defined" );
+
     setType(null);
   }
 
@@ -160,9 +160,19 @@ public class BuildSymbolTableAnalysis extends DepthFirstAdapter {
 
   @Override
   public void caseABlockStatement(ABlockStatement node) {
-    for (PStatement e : new ArrayList<PStatement>(node.getStatements())) {
+    for (PStatement e : node.getStatements()) {
       e.apply(this);
     }
     setType(null);
+  }
+
+  // Auxiliar methods
+  private void error(Node node, String msg) {
+    System.err.println(msg);
+
+    System.err.println();
+    System.err.println("Error on AST subtree:");
+    node.apply(new PrettyPrinter());
+    System.exit(-1);
   }
 }
