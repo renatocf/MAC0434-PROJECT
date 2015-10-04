@@ -173,14 +173,8 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
 
     PType rvalType = vRval.getType();
 
-    if (! (lvalType instanceof AIntType && rvalType instanceof AIntType)
-    &&  ! (lvalType instanceof ABooleanType && rvalType instanceof ABooleanType)
-    &&  ! (lvalType instanceof AIntArrayType && rvalType instanceof AIntArrayType)) {
-      Class assigned = symbolTable.getClass(lvalType.toString());
-      Class assignee = symbolTable.getClass(rvalType.toString());
-      if (!isValidAssignment(assigned, assignee))
-        error(node, "Incompatible types on assignment");
-    }
+    if (!isValidAssignment(lvalType, rvalType))
+      error(node, "Incompatible types on assignment");
   }
 
   @Override
@@ -209,21 +203,33 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
 
     PType rvalType = vRval.getType();
 
-    if (! (lvalType instanceof AIntType && rvalType instanceof AIntType)
-    &&  ! (lvalType instanceof ABooleanType && rvalType instanceof ABooleanType)
-    &&  ! (lvalType instanceof AIntArrayType && rvalType instanceof AIntType)) {
-      Class assigned = symbolTable.getClass(lvalType.toString());
-      Class assignee = symbolTable.getClass(rvalType.toString());
-      if (!isValidAssignment(assigned, assignee))
-        error(node, "Incompatible types on assignment");
-    }
+    if (!isValidArrayAssignment(lvalType, rvalType))
+      error(node, "Incompatible types on assignment");
   }
 
   // Auxiliar methods
-  private boolean isValidAssignment(Class assigned, Class assignee) {
+  public boolean isValidAssignment(PType assignedType, PType assigneeType) {
+    if (! (assignedType instanceof AIntType      && assigneeType instanceof AIntType)
+    &&  ! (assignedType instanceof ABooleanType  && assigneeType instanceof ABooleanType)
+    &&  ! (assignedType instanceof AIntArrayType && assigneeType instanceof AIntArrayType))
+      return isTypeCompatible(symbolTable.getClass(assignedType.toString()),
+                              symbolTable.getClass(assigneeType.toString()));
+    return true;
+  }
+
+  public boolean isValidArrayAssignment(PType assignedType, PType assigneeType) {
+    if (! (assignedType instanceof AIntType      && assigneeType instanceof AIntType)
+    &&  ! (assignedType instanceof ABooleanType  && assigneeType instanceof ABooleanType)
+    &&  ! (assignedType instanceof AIntArrayType && assigneeType instanceof AIntType))
+      return isTypeCompatible(symbolTable.getClass(assignedType.toString()),
+                              symbolTable.getClass(assigneeType.toString()));
+    return true;
+  }
+
+  private boolean isTypeCompatible(Class assigned, Class assignee) {
     if (assignee.type().equals(assigned.type())) return true;
     if (assignee.parent() != null) {
-        return isValidAssignment(assigned, symbolTable.getClass(assignee.parent()));
+        return isTypeCompatible(assigned, symbolTable.getClass(assignee.parent()));
     }
     return false;
   }

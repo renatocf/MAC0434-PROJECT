@@ -119,10 +119,10 @@ public class TypeCheckExpAnalysis extends DepthFirstAdapter {
     Method calledMethod = calledClass.getMethod(methodName);
 
     for (int i = 0; i < node.getActuals().size(); i++) {
+        PType paramType = calledMethod.getParamAt(i).type();
         node.getActuals().get(i).apply(this);
-        PType type = calledMethod.getParamAt(i).type();
 
-        if (! (type.getClass().isInstance(getType())))
+        if (!stmChecker.isValidAssignment(paramType, getType()))
            error(node, "Mismatched type " + getType()
                         + " on paramenter " + calledMethod.getParamAt(i)
                         + " on method " + calledMethod);
