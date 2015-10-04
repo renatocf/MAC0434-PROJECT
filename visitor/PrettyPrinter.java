@@ -1,3 +1,5 @@
+package visitor;
+
 import minijava.node.*;
 import minijava.analysis.*;
 
@@ -222,7 +224,7 @@ public class PrettyPrinter extends DepthFirstAdapter {
     System.out.println();
   }
 
-  public void inAId(AId node) {
+  public void inAIdentifier(AIdentifier node) {
     tab++;
     printNode(node);
     System.out.println(": " + node.getName());
