@@ -124,8 +124,8 @@ public class TypeCheckExpAnalysis extends DepthFirstAdapter {
 
         if (!stmChecker.isValidAssignment(paramType, getType()))
            error(node, "Mismatched type " + getType()
-                        + " on paramenter " + calledMethod.getParamAt(i)
-                        + " on method " + calledMethod);
+                        + " on parameter " + calledMethod.getParamAt(i)
+                        + " on method " + calledMethod.getId());
     }
 
     setType(calledMethod.type());
@@ -179,7 +179,7 @@ public class TypeCheckExpAnalysis extends DepthFirstAdapter {
 
   // Auxiliar methods
   private void error(Node node, String msg) {
-    System.err.println(msg);
+    System.err.println(msg.replaceAll("\\s+", " "));
 
     System.err.println();
     System.err.println("Error on AST subtree:");

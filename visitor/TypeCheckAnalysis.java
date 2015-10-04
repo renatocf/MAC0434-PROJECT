@@ -235,7 +235,7 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
   }
 
   private void error(Node node, String msg) {
-    System.err.println(msg);
+    System.err.println(msg.replaceAll("\\s+", " "));
 
     System.err.println();
     System.err.println("Error on AST subtree:");
