@@ -3,6 +3,9 @@ all: Main.class
 Main.class: Main.java visitor/SymbolTable.class visitor/BuildSymbolTableAnalysis.class visitor/TypeCheckAnalysis.class
 	javac Main.java
 
+visitor/PrettyPrinter.class: visitor/PrettyPrinter.java minijava
+	javac visitor/PrettyPrinter.java
+
 visitor/SymbolTable.class: visitor/SymbolTable.java minijava
 	javac visitor/SymbolTable.java
 
