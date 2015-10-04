@@ -221,10 +221,11 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
 
   // Auxiliar methods
   private boolean isValidAssignment(Class assigned, Class assignee) {
-    if (assigned == null) return false;
-    boolean isSameClass = assigned.type().equals(assignee.type());
-    return isSameClass
-      || isValidAssignment(symbolTable.getClass(assigned.parent()), assignee);
+    if (assignee.type().equals(assigned.type())) return true;
+    if (assignee.parent() != null) {
+        return isValidAssignment(assigned, symbolTable.getClass(assignee.parent()));
+    }
+    return false;
   }
 
   private void error(Node node, String msg) {
