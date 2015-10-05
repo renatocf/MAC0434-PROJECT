@@ -94,6 +94,7 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
 
     TypeCheckExpAnalysis v = new TypeCheckExpAnalysis(this);
     node.getReturnExpression().apply(v);
+
     if (!isValidAssignment(node.getReturnType(), v.getType())) {
       error(node, "Wrong return type on method " + currMethod.getId());
     }
@@ -245,18 +246,24 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
   public boolean isValidAssignment(PType assignedType, PType assigneeType) {
     if (! (assignedType instanceof AIntType      && assigneeType instanceof AIntType)
     &&  ! (assignedType instanceof ABooleanType  && assigneeType instanceof ABooleanType)
-    &&  ! (assignedType instanceof AIntArrayType && assigneeType instanceof AIntArrayType))
+    &&  ! (assignedType instanceof AIntArrayType && assigneeType instanceof AIntArrayType)) {
+      if (! (assignedType instanceof AIdentifierType
+          && assigneeType instanceof AIdentifierType)) return false;
       return isTypeCompatible(symbolTable.getClass(assignedType.toString()),
                               symbolTable.getClass(assigneeType.toString()));
+    }
     return true;
   }
 
   public boolean isValidArrayAssignment(PType assignedType, PType assigneeType) {
     if (! (assignedType instanceof AIntType      && assigneeType instanceof AIntType)
     &&  ! (assignedType instanceof ABooleanType  && assigneeType instanceof ABooleanType)
-    &&  ! (assignedType instanceof AIntArrayType && assigneeType instanceof AIntType))
+    &&  ! (assignedType instanceof AIntArrayType && assigneeType instanceof AIntType)) {
+      if (! (assignedType instanceof AIdentifierType
+          && assigneeType instanceof AIdentifierType)) return false;
       return isTypeCompatible(symbolTable.getClass(assignedType.toString()),
                               symbolTable.getClass(assigneeType.toString()));
+    }
     return true;
   }
 
