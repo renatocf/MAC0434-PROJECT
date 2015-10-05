@@ -121,14 +121,23 @@ public class TypeCheckExpAnalysis extends DepthFirstAdapter {
       error(node, "Method " + calledMethod.getId() + " not defined");
     }
 
-    for (int i = 0; i < node.getActuals().size(); i++) {
-        PType paramType = calledMethod.getParamAt(i).type();
-        node.getActuals().get(i).apply(this);
+    Enumeration params = calledMethod.getParams();
+    for (PExpression actual : node.getActuals()) {
+        if (!params.hasMoreElements()) {
+          error(node, "Excess of parameters on call of " + calledMethod.getId());
+        }
 
-        if (!stmChecker.isValidAssignment(paramType, getType()))
+        actual.apply(this);
+        Variable param = (Variable) params.nextElement();
+
+        if (!stmChecker.isValidAssignment(param.type(), getType()))
            error(node, "Mismatched type " + getType()
-                        + " on parameter " + calledMethod.getParamAt(i)
+                        + " on parameter " + param
                         + " on method " + calledMethod.getId());
+    }
+
+    if (params.hasMoreElements()) {
+      error(node, "Wrong number of parameters on call of " + calledMethod.getId());
     }
 
     setType(calledMethod.type());
