@@ -115,11 +115,11 @@ public class TypeCheckExpAnalysis extends DepthFirstAdapter {
     String className = getType().toString();
     String methodName = node.getName().toString();
 
-    Method calledMethod = stmChecker.findMethod(methodName, className);
-
     if (!stmChecker.containsMethod(methodName, className)) {
-      error(node, "Method " + calledMethod.getId() + " not defined");
+      error(node, "Method " + methodName + " not defined");
     }
+
+    Method calledMethod = stmChecker.findMethod(methodName, className);
 
     Enumeration params = calledMethod.getParams();
     for (PExpression actual : node.getActuals()) {
@@ -179,6 +179,10 @@ public class TypeCheckExpAnalysis extends DepthFirstAdapter {
   @Override
   public void caseANewObjectExpression(ANewObjectExpression node) {
     String className = node.getClassName().toString();
+
+    if (!stmChecker.getSymbolTable().containsClass(className))
+     error(node, "Class " + className + " not defined");
+
     setType(stmChecker.getSymbolTable().getClass(className).type());
   }
 
