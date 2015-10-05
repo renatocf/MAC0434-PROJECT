@@ -82,8 +82,8 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
     if (! (type instanceof AIntType)
     &&  ! (type instanceof ABooleanType)
     &&  ! (type instanceof AIntArrayType)
-    &&  ! (type instanceof AIdentifierType)
-    &&  ! (symbolTable.containsClass(((AIdentifierType) type).getName().toString())) )
+    &&  ! ((type instanceof AIdentifierType)
+            && symbolTable.containsClass(((AIdentifierType) type).getName().toString())) )
       error(node, "Variable type " + type.toString() + " not declared");
   }
 
@@ -119,8 +119,8 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
     if (! (type instanceof AIntType)
     &&  ! (type instanceof ABooleanType)
     &&  ! (type instanceof AIntArrayType)
-    &&  ! (type instanceof AIdentifierType)
-    &&  ! (symbolTable.containsClass(((AIdentifierType) type).getName().toString())) )
+    &&  ! ((type instanceof AIdentifierType)
+            && symbolTable.containsClass(((AIdentifierType) type).getName().toString())) )
       error(node, "Parameter type " + node.getType().toString() + " not declared");
   }
 
