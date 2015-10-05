@@ -1,12 +1,5 @@
-/****************************************************************
- * Dupla:                                                       *
- * Gabriel Ferreira Guilhoto - NUSP: 4404279                    *
- * Renato Cordeiro Ferreira  - NUSP: 7990933                    *
- ****************************************************************/
-
 Package
   minijava;
-
 Helpers
   unicode_input_character = [0..0xffff];
   ht                      = 0x0009; // horizontal tab
@@ -20,10 +13,9 @@ Helpers
   not_star_not_slash      = [input_character - ['*' + '/']] | line_terminator;
   digit                   = ['0'..'9'];
   letter                  = ['a'..'z'] | ['A'..'Z'];
-
 Tokens
   // KEYWORDS
-  class_token             = 'class';
+  klass                   = 'class';
   public                  = 'public';
   static                  = 'static';
   void                    = 'void';
@@ -65,174 +57,255 @@ Tokens
   dot                     = '.';
 
   // LITERALS
-  integer_literal         = (digit)+;
+  int_literal             = digit+;
   true                    = 'true';
   false                   = 'false';
-  id                      = letter (letter | digit | '_')*;
+  id                      = letter (letter | '_' | digit)*;
 
   // WS
-  white_space             = (ht | ff | sp | line_terminator);
-  comment                 = ( ('//' input_character* line_terminator)
-                            | ('/*' (not_star)* ('*' | not_star_not_slash (not_star)*)* '*/') );
+  white_space             = (sp | ht | ff | line_terminator)*;
+  traditional_comment     = '/*' not_star+ '*'+ (not_star_not_slash not_star* '*'+)* '/';
+  documentation_comment   = '/**' '*'* (not_star_not_slash not_star* '*'+)* '/';
+  end_of_line_comment     = '//' input_character* line_terminator?;
 
 Ignored Tokens
-  white_space, comment;
+  white_space, traditional_comment, documentation_comment, end_of_line_comment;
+
+
+/**********************************************************************
+ *
+ *  Productions
+ *
+ *********************************************************************/
 
 Productions
-  goal {-> program}
-  =                  main_class [classes]:class_declaration_list
-                     {-> New program(main_class.main_class, [classes.class_decl])};
 
-  main_class {-> main_class}
-  =                  class_token [name]:id [external_lbrace]:lbrace public static void main lparen string lbracket rbracket [method_parameter]:id rparen lbrace [statement]:statement rbrace [external_rbrace]:rbrace
-                     {-> New main_class(New identifier(name), New identifier(method_parameter), statement.statement)};
+program =
+    [main_class]:main_class class_decl*
+    {-> New program(main_class, [class_decl])};
 
-  class_declaration_list {-> class_decl*}
-  =   {empty}        {-> []}
-  |                  class_declaration [rest]:class_declaration_list
-                     {-> [class_declaration.class_decl, rest.class_decl]};
+main_class =
+    klass [name]:identifier
+    [class_begin]:lbrace
+        public static void main
+            lparen string lbracket rbracket [method_parameter]:identifier rparen
+        [method_begin]:lbrace
+            [statement]:statement
+        [method_end]:rbrace
+    [class_end]:rbrace
+    {-> New main_class(name, method_parameter, statement)};
 
-  class_declaration {-> class_decl}
-  =   {extended}    class_token [name]:id extends [parent]:id lbrace [vars]:var_declaration_list [methods]:method_declaration_list rbrace
-                    {-> New class_decl.extends(New identifier(name), New identifier(parent), [vars.variable_declaration], [methods.method_declaration])}
-  |   {simple}      class_token [name]:id lbrace [vars]:var_declaration_list [methods]:method_declaration_list rbrace
-                    {-> New class_decl.simple(New identifier(name), [vars.variable_declaration], [methods.method_declaration])};
+class_decl =
+    klass [name]:identifier class_extention?
+    lbrace
+        [variables]:variable_declaration*
+        [methods]:method_declaration*
+    rbrace
+    {-> New class_decl.simple(name, [variables], [methods])}; // TODO extends
 
-  var_declaration_list {-> variable_declaration*}
-  =   {empty}        {-> []}
-  |                  [rest]:var_declaration_list var_declaration
-                     {-> [rest.variable_declaration, var_declaration.variable_declaration]};
+class_extention =
+  extends [parent]:identifier;
 
-  var_declaration {-> variable_declaration}
-  =                  type [name]:id semicolon
-                     {-> New variable_declaration(type.type, New identifier(name))};
+method_declaration =
+    public [return_type]:type [name]:identifier
+        lparen [formals]:formal_parameter_list? rparen
+    lbrace
+        [locals]:variable_declaration*
+        [statements]:statement*
+        return [return_expression]:expression semicolon
+    rbrace
+    {-> New method_declaration(return_type, name, [formals.formal_parameter], [locals], [statements], return_expression)};
 
-  method_declaration_list {-> method_declaration*}
-  =   {empty}        {-> []}
-  |                  [rest]:method_declaration_list method_declaration
-                     {-> [rest.method_declaration, method_declaration.method_declaration]};
+variable_declaration =
+    [type]:type [name]:identifier semicolon
+    {-> New variable_declaration(type, name)};
 
-  method_declaration {-> method_declaration}
-  =                  public [return_type]:type [name]:id lparen [args]:argument_list rparen lbrace [vars]:var_declaration_list [statements]:statement_list return [return_expression]:boolean_expression semicolon rbrace
-                     {-> New method_declaration(return_type.type, New identifier(name), [args.formal_parameter], [vars.variable_declaration], [statements.statement], return_expression.expression)};
+formal_parameter_list {-> formal_parameter* } =
+    {formal_parameter}
+      formal_parameter
+      {-> [formal_parameter.formal_parameter] } |
+    {formal_parameters}
+      formal_parameter_list comma formal_parameter
+      {-> [formal_parameter_list.formal_parameter, formal_parameter.formal_parameter] };
 
-  argument_list {-> formal_parameter*}
-  =   {empty}        {-> []}
-  |                  type [name]:id [rest]:argument_list_tail
-                     {-> [New formal_parameter(type.type, New identifier(name)), rest.formal_parameter]};
+formal_parameter =
+    [type]:type [name]:identifier
+    {-> New formal_parameter(type, name)};
 
-  argument_list_tail  {-> formal_parameter*}
-  =   {empty}        {-> []}
-  |                  comma type [name]:id [rest]:argument_list_tail
-                     {-> [New formal_parameter(type.type, New identifier(name)), rest.formal_parameter]};
+type =
+    {int}
+      int
+      {-> New type.int(int)} |
+    {int_array}
+      int lbracket rbracket
+      {-> New type.int_array(int)} |
+    {boolean}
+      boolean
+      {-> New type.boolean(boolean)} |
+    {identifier}
+      identifier
+      {-> New type.identifier(identifier)};
 
-  type {-> type}
-  =   {int}          [name]:int
-                     { -> New type.int(name) }
-  |   {int_array}    [name]:int lbracket rbracket
-                     { -> New type.int_array(name) }
-  |   {boolean}      [name]:boolean
-                     { -> New type.boolean(name) }
-  |   {identifier}   [name]:id
-                     { -> New type.identifier(New identifier(name)) };
+statement =
+    {without_trailing_substatement}
+      statement_without_trailing_substatement
+      {-> statement_without_trailing_substatement.statement} |
+    {if_else}
+      if lparen [condition]:expression rparen
+        [true_statement]:statement
+      else
+        [false_statement]:statement
+      {-> New statement.if(condition, true_statement, false_statement)} |
+    {while}
+      while lparen [condition]:expression rparen [statement]:statement
+      {-> New statement.while(condition, statement)};
 
-  statement_list {-> statement*}
-  =   {empty}        {-> []}
-  |                  statement [rest]:statement_list
-                     {-> [statement.statement, rest.statement]};
+statement_without_trailing_substatement {->statement} =
+    {block}
+      lbrace [statements]:statement* rbrace
+      {-> New statement.block([statements])} |
+    {print}
+      print lparen [value]:expression rparen semicolon
+      {-> New statement.println(value)} |
+    {assign}
+      [name]:identifier assign [value]:expression semicolon
+      {-> New statement.assign(name, value)} |
+    {array_assign}
+      [name]:identifier lbracket [index]:expression rbracket assign [value]:expression semicolon
+      {-> New statement.array_assign(name, index, value)};
 
-  statement {-> statement}
-  =   {block}            lbrace [statements]:statement_list rbrace
-                         { -> New statement.block([statements.statement]) }
-  |   {if}               if lparen [condition]:boolean_expression rparen [true_statement]:statement else [false_statement]:statement
-                         { -> New statement.if(condition.expression, true_statement.statement, false_statement.statement) }
-  |   {while}            while lparen [condition]:boolean_expression rparen [statement]:statement
-                         { -> New statement.while(condition.expression, statement.statement) }
-  |   {println}          print lparen [value]:boolean_expression rparen semicolon
-                         { -> New statement.println(value.expression) }
-  |   {assign}           [name]:id assign [value]:boolean_expression semicolon
-                         { -> New statement.assign(New identifier(name), value.expression) }
-  |   {array_assign}     [name]:id lbracket [index]:expression rbracket assign [value]:boolean_expression semicolon
-                         { -> New statement.array_assign(New identifier(name), index.expression, value.expression) };
+expression_list {-> expression*} =
+    {expression}
+      expression
+      {-> [expression.expression]} |
+    {expressions}
+      expression_list comma expression
+      {-> [expression_list.expression, expression.expression]};
 
-  boolean_expression {-> expression}
-  =   {and}              [lhs]:boolean_term and [rhs]:boolean_expression
-                         { -> New expression.and(lhs.expression, rhs.expression) }
-  |   {boolean_term}     boolean_term
-                         { -> boolean_term.expression };
+expression =
+    conditional_or_expression
+    {-> conditional_or_expression.expression};
 
-  boolean_term {-> expression}
-  =   {not}              not boolean_term
-                         { -> New expression.not(boolean_term.expression) }
-  |   {relation}         boolean_factor
-                         { -> boolean_factor.expression };
+conditional_or_expression {-> expression} =
+    {and}
+      conditional_and_expression
+      {-> conditional_and_expression.expression};
 
-  boolean_factor {-> expression}
-  =   {less}             [lhs]:expression less [rhs]:boolean_factor
-                         { -> New expression.less_than(lhs.expression, rhs.expression) }
-  |   {expression}       expression
-                         { -> expression.expression };
+conditional_and_expression {-> expression} =
+    {comparative}
+      comparative_expression
+      {-> comparative_expression.expression} |
+    {and}
+      [left]:conditional_and_expression and [right]:comparative_expression
+      {-> New expression.and(left.expression, right.expression)};
 
-  expression {-> expression}
-  =   {plus}             [lhs]:term plus [rhs]:expression
-                         { -> New expression.plus(lhs.expression, rhs.expression) }
-  |   {minus}            [lhs]:term minus [rhs]:expression
-                         { -> New expression.minus(lhs.expression, rhs.expression) }
-  |   {term}             term
-                         { -> term.expression };
+comparative_expression {-> expression} =
+    {relational}
+      relational_expression
+      {-> relational_expression.expression};
 
-  term {-> expression}
-  =   {times}            [lhs]:factor mult [rhs]:term
-                         { -> New expression.times(lhs.expression, rhs.expression) }
-  |   {factor}           factor
-                         { -> factor.expression };
+relational_expression {-> expression} =
+    {additive}
+      additive_expression
+      {-> additive_expression.expression } |
+    {less_than}
+      [left]:relational_expression less [right]:additive_expression
+      {-> New expression.less_than(left.expression, right.expression)};
 
-  factor {-> expression}
-  =   {array_lookup}     [array]:factor lbracket [index]:expression rbracket
-                         { -> New expression.array_lookup(array.expression, index.expression) }
-  |   {array_length}     [array]:factor dot length
-                         { -> New expression.array_length(array.expression) }
-  |   {call}             [instance]:factor dot [name]:id lparen [actuals]:arg_list rparen
-                         { -> New expression.call(instance.expression, New identifier(name), [actuals.expression]) }
-  |   {integer}          [value]:integer_literal
-                         { -> New expression.integer(value) }
-  |   {true}             true
-                         { -> New expression.true(true)}
-  |   {false}            false
-                         { -> New expression.false(false)}
-  |   {identifier}       [name]:id
-                         { -> New expression.identifier(New identifier(name)) }
-  |   {this}             this
-                         { -> New expression.this(this) }
-  |   {new_array}        new int lbracket [size]:expression rbracket
-                         { -> New expression.new_array(size.expression) }
-  |   {new_object}       new [class_name]:id lparen rparen
-                         { -> New expression.new_object(New identifier(class_name)) }
-  |   {parenthesis}      lparen boolean_expression rparen
-                         { -> boolean_expression.expression };
+additive_expression {-> expression} =
+    {multiplicative}
+      multiplicative_expression
+      {-> multiplicative_expression.expression} |
+    {plus}
+      [left]:additive_expression plus [right]:multiplicative_expression
+      {-> New expression.plus(left.expression, right.expression)} |
+    {minus}
+      [left]:additive_expression minus [right]:multiplicative_expression
+      {-> New expression.minus(left.expression, right.expression)};
 
-  arg_list {-> expression*}
-  =   {empty}        {-> []}
-  |                  boolean_expression [rest]:arg_list_tail
-                     {-> [boolean_expression.expression, rest.expression]};
+multiplicative_expression {-> expression} =
+    {unary}
+      unary_expression
+      {-> unary_expression.expression} |
+    {mult}
+      [left]:multiplicative_expression mult [right]:unary_expression
+      {-> New expression.times(left.expression, right.expression)};
 
-  arg_list_tail {-> expression*}
-  =   {empty}        {-> []}
-  |                  comma boolean_expression [rest]:arg_list_tail
-                     {-> [boolean_expression.expression, rest.expression]};
+unary_expression {-> expression} =
+    {primary}
+      primary_expression
+      {-> primary_expression.expression} |
+    {negation}
+      not unary_expression
+      {-> New expression.not(unary_expression.expression)};
+
+primary_expression {-> expression} =
+    {new_int_array}
+      new int lbracket [size]:expression rbracket
+      {-> New expression.new_array(size)} |
+    {primary_no_new_array}
+      primary_no_new_array_expression
+      {-> primary_no_new_array_expression.expression};
+
+primary_no_new_array_expression {-> expression} =
+    {literal}
+      literal_expression
+      {-> literal_expression.expression} |
+    {identifier}
+      identifier
+      {-> New expression.identifier(identifier)} |
+    {this}
+      this
+      {-> New expression.this(this)} |
+    {new_instance}
+      new [class_name]:identifier lparen rparen
+      {-> New expression.new_object(class_name)} |
+    {array_length}
+      [array]:primary_expression dot length
+      {-> New expression.array_length(array.expression)} |
+    {array_access}
+      [array]:primary_no_new_array_expression lbracket [index]:expression rbracket
+      {-> New expression.array_lookup(array.expression, index)} |
+    {method_invocation}
+      [instance]:primary_expression dot [name]:identifier lparen [actuals]:expression_list? rparen
+      {-> New expression.call(instance.expression, name, [actuals.expression])} |
+    {expression}
+      lparen expression rparen
+      {-> expression};
+
+literal_expression {-> expression} =
+    {integer}
+      int_literal
+      {-> New expression.integer(int_literal)} |
+    {true}
+      true
+      {-> New expression.true(true)} |
+    {false}
+      false
+      {-> New expression.false(false)};
+
+identifier =
+  id;
+
+
+/**********************************************************************
+ *
+ *  Abstract Syntax Tree
+ *
+ *********************************************************************/
+
 
 Abstract Syntax Tree
-
-  program =
+program =
     [main_class]:main_class
     [class_decl]:class_decl*;
 
-  main_class =
+main_class =
     [name]:identifier
     [method_parameter]:identifier
     [statement]:statement;
 
-  class_decl =
+class_decl =
     {extends}
       [name]:identifier
       [parent]:identifier
@@ -243,7 +316,7 @@ Abstract Syntax Tree
       [variables]:variable_declaration*
       [methods]:method_declaration*;
 
-  method_declaration =
+method_declaration =
     [return_type]:type
     [name]:identifier
     [formals]:formal_parameter*
@@ -251,15 +324,15 @@ Abstract Syntax Tree
     [statements]:statement*
     [return_expression]:expression;
 
-  variable_declaration =
+variable_declaration =
     [type]:type
     [name]:identifier;
 
-  formal_parameter =
+formal_parameter =
     [type]:type
     [name]:identifier;
 
-  type =
+type =
     {int}
       [name]:int |
     {int_array}
@@ -269,7 +342,7 @@ Abstract Syntax Tree
     {identifier}
       [name]:identifier;
 
-  statement =
+statement =
     {block}
       [statements]:statement* |
     {if}
@@ -289,7 +362,7 @@ Abstract Syntax Tree
       [index]:expression
       [value]:expression;
 
-  expression =
+expression =
     {and}
       [left]:expression
       [right]:expression |
@@ -315,7 +388,7 @@ Abstract Syntax Tree
       [name]:identifier
       [actuals]:expression* |
     {integer}
-      [value]:integer_literal |
+      [value]:int_literal |
     {true}
       true |
     {false}
@@ -331,5 +404,5 @@ Abstract Syntax Tree
     {not}
       [expression]:expression;
 
-  identifier =
-    [name]: id;
+identifier =
+  [name]: id;

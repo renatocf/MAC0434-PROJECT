@@ -1,33 +1,34 @@
-import minijava.parser.*;
-import minijava.lexer.*;
-import minijava.node.*;
-import visitor.*;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import Mips.MipsFrame;
+import Frame.Frame;
+import Symbol.Symbol;
 
 public class Main {
   public static void main(String[] arguments) {
-    try {
-      // Create a lexer instance.
-      Lexer lexer = new Lexer(new PushbackReader(new InputStreamReader(System.in), 1024));
-      Parser parser = new Parser(lexer);
-      Start ast = parser.parse();
+    ArrayList formals1 = new ArrayList<Boolean>();
+    formals1.add(true);
+    formals1.add(true);
+    formals1.add(true);
+    formals1.add(false);
+    formals1.add(true);
+    formals1.add(false);
+    formals1.add(false);
+    formals1.add(false);
+    formals1.add(false);
+    formals1.add(false);
+    Frame frame1 = new MipsFrame(Symbol.symbol("A"), formals1);
+    System.out.println(frame1.toString());
 
-      System.out.println("Construindo a tabela de simbolos...");
-
-      //Build the symbol table
-      BuildSymbolTableAnalysis vb = new BuildSymbolTableAnalysis();
-      ast.apply(vb);
-
-      System.out.println("Analisando tipos...");
-
-      //Type checking
-      TypeCheckAnalysis vt = new TypeCheckAnalysis(vb.getSymTab());
-      ast.apply(vt);
-
-      System.out.println("Ok!!!");
-
-    } catch(Exception e) {
-      System.out.println("Error: " + e.getMessage());
-    }
+    ArrayList formals2 = new ArrayList<Boolean>();
+    formals2.add(false);
+    formals2.add(false);
+    formals2.add(true);
+    formals2.add(false);
+    formals2.add(true);
+    Frame frame2 = frame1.newFrame(Symbol.symbol("B"), formals2);
+    System.out.println(frame2.toString());
   }
 }

@@ -1,22 +1,50 @@
 all: Main.class
 
-Main.class: Main.java visitor/SymbolTable.class visitor/BuildSymbolTableAnalysis.class visitor/TypeCheckAnalysis.class
+Main.class: Main.java Temp/CombineMap.class Temp/DefaultMap.class Temp/Label.class Temp/Offset.class Temp/SimpleExp.class Temp/Temp.class Temp/TempMap.class Mips/MipsFrame.class Mips/InFrame.class Mips/InReg.class
 	javac Main.java
 
-visitor/PrettyPrinter.class: visitor/PrettyPrinter.java minijava
-	javac visitor/PrettyPrinter.java
 
-visitor/SymbolTable.class: visitor/SymbolTable.java minijava
-	javac visitor/SymbolTable.java
+Temp/CombineMap.class: Temp/CombineMap.java
+	javac Temp/CombineMap.java
 
-visitor/BuildSymbolTableAnalysis.class: visitor/BuildSymbolTableAnalysis.java minijava
-	javac visitor/BuildSymbolTableAnalysis.java
+Temp/DefaultMap.class: Temp/DefaultMap.java
+	javac Temp/DefaultMap.java
 
-visitor/TypeCheckAnalysis.class: visitor/TypeCheckAnalysis.java minijava visitor/TypeCheckExpAnalysis.class
-	javac visitor/TypeCheckAnalysis.java
+Temp/Label.class: Symbol/Symbol.class Symbol/Table.class Temp/Label.java
+	javac Temp/Label.java
 
-visitor/TypeCheckExpAnalysis.class: visitor/TypeCheckExpAnalysis.java
-	javac visitor/TypeCheckExpAnalysis.java
+Temp/Offset.class: Temp/Offset.java
+	javac Temp/Offset.java
+
+Temp/SimpleExp.class: Temp/SimpleExp.java
+	javac Temp/SimpleExp.java
+
+Temp/Temp.class: Temp/Temp.java
+	javac Temp/Temp.java
+
+Temp/TempMap.class: Temp/TempMap.java
+	javac Temp/TempMap.java
+
+Symbol/Symbol.class: Symbol/Symbol.java
+	javac Symbol/Symbol.java
+
+Symbol/Table.class: Symbol/Table.java
+	javac Symbol/Table.java
+
+Frame/Access.class: Frame/Access.java
+	javac Frame/Access.java
+
+Frame/Frame.class: Temp/TempMap.class Frame/Frame.java
+	javac Frame/Frame.java
+
+Mips/MipsFrame.class: Frame/Frame.class Mips/MipsFrame.java
+	javac Mips/MipsFrame.java
+
+Mips/InFrame.class: Frame/Access.class Mips/InFrame.java
+	javac Mips/InFrame.java
+
+Mips/InReg.class: Frame/Access.class Mips/InReg.java
+	javac Mips/InReg.java
 
 minijava: minijava.sablecc
 	rm -rf minijava
@@ -24,4 +52,4 @@ minijava: minijava.sablecc
 
 .PHONY: clean
 clean:
-	rm -rf minijava *.class visitor/*.class
+	rm -rf minijava *.class visitor/*.class Frame/*.class Mips/*.class Symbol/*.class Temp/*.class
