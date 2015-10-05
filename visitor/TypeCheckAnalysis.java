@@ -92,6 +92,12 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
     String methodName = node.getName().toString();
     currMethod = symbolTable.getMethod(methodName, currClass.getId());
 
+    TypeCheckExpAnalysis v = new TypeCheckExpAnalysis(this);
+    node.getReturnExpression().apply(v);
+    if (!isValidAssignment(node.getReturnType(), v.getType())) {
+      error(node, "Wrong return type on method " + currMethod.getId());
+    }
+
     for(PFormalParameter e : node.getFormals()) {
       e.apply(this);
     }
