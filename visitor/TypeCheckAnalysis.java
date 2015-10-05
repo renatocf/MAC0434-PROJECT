@@ -153,20 +153,11 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
   @Override
   public void caseAAssignStatement(AAssignStatement node) {
     String lvalName = node.getName().toString();
+    if (!containsVariable(lvalName)) {
+      error(node, "Variable " + node.getName().toString() + " not declared");
+    }
 
-    PType lvalType = null;
-    if (currMethod.containsVar(lvalName)) {
-      lvalType = currMethod.getVar(lvalName).type();
-    }
-    else if (currMethod.containsParam(lvalName)) {
-      lvalType = currMethod.getParam(lvalName).type();
-    }
-    else if (currClass.containsVar(lvalName)) {
-      lvalType = currClass.getVar(lvalName).type();
-    }
-    else {
-      error(node, "Variable " + lvalName + " not declared");
-    }
+    PType lvalType = findVariable(lvalName).type();
 
     TypeCheckExpAnalysis vRval = new TypeCheckExpAnalysis(this);
     node.getValue().apply(vRval);
@@ -184,19 +175,12 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
     if (! (vIndex.getType() instanceof AIntType) )
        error(node, "Index must be of type integer");
 
-    PType lvalType = null;
-    if (currMethod.containsVar(node.getName().toString())) {
-      lvalType = currMethod.getVar(node.getName().toString()).type();
-    }
-    else if (currMethod.containsParam(node.getName().toString())) {
-      lvalType = currMethod.getParam(node.getName().toString()).type();
-    }
-    else if (currClass.containsVar(node.getName().toString())) {
-      lvalType = currClass.getVar(node.getName().toString()).type();
-    }
-    else {
+    String lvalName = node.getName().toString();
+    if (!containsVariable(lvalName)) {
       error(node, "Variable " + node.getName().toString() + " not declared");
     }
+
+    PType lvalType = findVariable(lvalName).type();
 
     TypeCheckExpAnalysis vRval = new TypeCheckExpAnalysis(this);
     node.getValue().apply(vRval);
@@ -208,6 +192,50 @@ public class TypeCheckAnalysis extends DepthFirstAdapter {
   }
 
   // Auxiliar methods
+  public boolean containsVariable(String varName) {
+    return findVariable(varName) != null;
+  }
+
+  public Variable findVariable(String varName) {
+    if (currMethod.containsVar(varName)) {
+      return currMethod.getVar(varName);
+    }
+    else if (currMethod.containsParam(varName)) {
+      return currMethod.getParam(varName);
+    }
+    else {
+      return findParameter(varName, currClass.getId());
+    }
+  }
+
+  public boolean containsParameter(String paramName, String className) {
+    return findParameter(paramName, className) != null;
+  }
+
+  public Variable findParameter(String varName, String className) {
+    if (className == null) return null;
+
+    Class currClass = symbolTable.getClass(className);
+    if (currClass.containsVar(varName))
+      return currClass.getVar(varName);
+
+    return findParameter(varName, currClass.parent());
+  }
+
+  public boolean containsMethod(String methodName, String className) {
+    return findMethod(methodName, className) != null;
+  }
+
+  public Method findMethod(String methodName, String className) {
+    if (className == null) return null;
+
+    Class calledClass = symbolTable.getClass(className);
+    if (calledClass.containsMethod(methodName))
+      return calledClass.getMethod(methodName);
+
+    return findMethod(methodName, calledClass.parent());
+  }
+
   public boolean isValidAssignment(PType assignedType, PType assigneeType) {
     if (! (assignedType instanceof AIntType      && assigneeType instanceof AIntType)
     &&  ! (assignedType instanceof ABooleanType  && assigneeType instanceof ABooleanType)

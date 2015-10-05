@@ -113,10 +113,13 @@ public class TypeCheckExpAnalysis extends DepthFirstAdapter {
     node.getInstance().apply(this);
 
     String className = getType().toString();
-    Class calledClass = stmChecker.getSymbolTable().getClass(className);
-
     String methodName = node.getName().toString();
-    Method calledMethod = calledClass.getMethod(methodName);
+
+    Method calledMethod = stmChecker.findMethod(methodName, className);
+
+    if (!stmChecker.containsMethod(methodName, className)) {
+      error(node, "Method " + calledMethod.getId() + " not defined");
+    }
 
     for (int i = 0; i < node.getActuals().size(); i++) {
         PType paramType = calledMethod.getParamAt(i).type();
