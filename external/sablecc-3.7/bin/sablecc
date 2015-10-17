@@ -8,4 +8,4 @@
 # * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #
 # IMPORTANT: Put the absolute path to sablecc.jar below.
-java -jar $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/sablecc.jar $*
+java -jar $(dirname $(realpath $0))/../lib/sablecc.jar $*
