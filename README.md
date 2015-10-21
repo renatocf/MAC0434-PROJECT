@@ -21,7 +21,6 @@ t67     36
 ```
 
 ```txt
-Frame: A
 Frame: A.B
 
 formals actuals

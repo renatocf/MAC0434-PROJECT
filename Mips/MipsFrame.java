@@ -35,15 +35,20 @@ public class MipsFrame extends Frame {
     Iterator<Boolean> escapes = f.iterator();
     formals.add(allocLocal(escapes.next().booleanValue())); // primeiro argumento
     actuals.add(new InReg(V0));                             // vai no registrador V0
+
     for (int i = 0; i < argRegs.length; ++i) { // Tratar os argumentos que vao nos registradores (A0 - A3)
       if (!escapes.hasNext())
         break;
       offset += wordSize;
-      // Completar aqui
+
+      formals.add(allocLocal(escapes.next().booleanValue()));
+      actuals.add(new InReg(argRegs[i]));
     }
     while (escapes.hasNext()) { // Tratar o resto dos argumentos
       offset += wordSize;
-      // Completar aqui
+
+      formals.add(allocLocal(escapes.next().booleanValue()));
+      actuals.add(new InFrame(offset));
     }
   }
 
@@ -56,9 +61,10 @@ public class MipsFrame extends Frame {
   public Access allocLocal(boolean escape) {
     if (escape) {
       Access result = new InFrame(offset);
-      offset -= wordSize;
+      offset += wordSize;
       return result;
     } else
+      offset += wordSize;
       return new InReg(new Temp());
   }
 
