@@ -19,7 +19,7 @@ public class MipsFrame extends Frame {
   private static HashMap<Symbol,Integer> functions = new HashMap<Symbol,Integer>();
   private List<Access> actuals;
 
-  public MipsFrame(Symbol n, List<Boolean> f) {
+  private MipsFrame(Symbol n, List<Boolean> f) {
     Integer count = functions.get(n);
     if (count == null) {
       count = new Integer(0);
@@ -61,10 +61,9 @@ public class MipsFrame extends Frame {
   public Access allocLocal(boolean escape) {
     if (escape) {
       Access result = new InFrame(offset);
-      offset += wordSize;
+      offset -= wordSize;
       return result;
     } else
-      offset += wordSize;
       return new InReg(new Temp());
   }
 
@@ -113,6 +112,10 @@ public class MipsFrame extends Frame {
     // registers that a callee may use without preserving
     callerSaves = { T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, V0, V1 };
 
+  static final Temp FP = new Temp(); // virtual frame pointer (eliminated)
+  public Temp FP() { return FP; }
+  public Temp RV() { return V0; }
+
   private static final
   HashMap<Temp,String> tempMap = new HashMap<Temp,String>(32);
   static {
@@ -154,7 +157,7 @@ public class MipsFrame extends Frame {
     return tempMap.get(temp);
   }
 
-  // Impressao dos frames
+    // Impressao dos frames
 
   private String regname(String reg) {
     HashMap<String,String> regnameMap = new HashMap<String,String>(32);
@@ -209,4 +212,55 @@ public class MipsFrame extends Frame {
 
     return txt;
   }
+
+  // NOVOS
+
+  public Temp getArgReg(int i) {
+    return argRegs[i];
+  }
+
+  public Temp getThisReg() {
+    return V0;
+  }
+
+  public MipsFrame() {}
+
+  //Mini Java Library will be appended to end of
+    //program
+    public String programTail(){
+
+  return
+      "         .text            \n" +
+      "         .globl _halloc   \n" +
+      "_halloc:                  \n" +
+      "         li $v0, 9        \n" +
+      "         syscall          \n" +
+      "         j $ra            \n" +
+      "                          \n" +
+      "         .text            \n" +
+      "         .globl _printint \n" +
+      "_printint:                \n" +
+      "         li $v0, 1        \n" +
+      "         syscall          \n" +
+      "         la $a0, newl     \n" +
+      "         li $v0, 4        \n" +
+      "         syscall          \n" +
+      "         j $ra            \n" +
+      "                          \n" +
+      "         .data            \n" +
+      "         .align   0       \n" +
+      "newl:    .asciiz \"\\n\"  \n" +
+      "         .data            \n" +
+      "         .align   0       \n" +
+      "str_er:  .asciiz \" ERROR: abnormal termination\\n\" "+
+      "                          \n" +
+      "         .text            \n" +
+      "         .globl _error    \n" +
+      "_error:                   \n" +
+      "         li $v0, 4        \n" +
+      "         la $a0, str_er   \n" +
+      "         syscall          \n" +
+      "         li $v0, 10       \n" +
+      "         syscall          \n" ;
+    }
 }

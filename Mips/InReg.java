@@ -11,4 +11,9 @@ public class InReg extends Frame.Access {
   public String toString() {
     return temp.toString();
   }
+
+  // NOVOS
+  public Tree.Exp exp(Tree.Exp fp) {
+    return new Tree.TEMP(temp);
+  }
 }
