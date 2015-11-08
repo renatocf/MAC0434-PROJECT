@@ -31,9 +31,9 @@ public class Translate extends DepthFirstAdapter {
     Tree.Exp bodyExp = body.unEx();
     Tree.Stm bodyStm;
     if (bodyExp != null)
-        bodyStm = MOVE(TEMP(currentFrame.RV()), bodyExp);
+      bodyStm = MOVE(TEMP(currentFrame.RV()), bodyExp);
     else
-        bodyStm = body.unNx();
+      bodyStm = body.unNx();
     ProcFrag frag = new ProcFrag(bodyStm, currentFrame);
     frags.add(frag);
   }
@@ -49,7 +49,7 @@ public class Translate extends DepthFirstAdapter {
     frags.add(frag);
     List<PClassDecl> copy = new ArrayList<PClassDecl>(node.getClassDecl());
     for(PClassDecl e : copy) {
-        e.apply(this);
+      e.apply(this);
     }
     currentExpression = null;
   }
@@ -57,17 +57,21 @@ public class Translate extends DepthFirstAdapter {
   @Override
   public void caseAMainClass(AMainClass node) {
     String className = node.getName().toString().replaceAll("\\s+","");
-    Class klass = symbolTable.getClass(className);
-    Method m = klass.getMethod("Main");
+    currentClass = symbolTable.getClass(className);
+
+    currentMethod = currentClass.getMethod("Main");
+
     Symbol sym =  Symbol.symbol("main");
     LinkedList<Boolean> params = new LinkedList<Boolean>();
     params.add(0, new Boolean(false)); // (String[] argv)
     // params.add(0, new Boolean(true)); // we add the static link here
     currentFrame = frame.newFrame(sym, params);
-    currentMethod = m;
-    Exp e = visitAndGetExp(node.getStatement());
-    procEntryExit(e);
+
+    procEntryExit(visitAndGetExp(node.getStatement()));
+
     currentExpression = null;
+    currentMethod = null;
+    currentClass = null;
   }
 
   @Override
@@ -129,7 +133,7 @@ public class Translate extends DepthFirstAdapter {
     List<PVariableDeclaration> locals = new ArrayList<PVariableDeclaration>(node.getLocals());
     for(PVariableDeclaration e : locals)
     {
-        e.apply(this);
+      e.apply(this);
     }
 
     Tree.Stm stms;
@@ -213,19 +217,29 @@ public class Translate extends DepthFirstAdapter {
     Exp expl = visitAndGetExp(node.getLeft());
     Exp expr = visitAndGetExp(node.getRight());
     currentExpression = new Ex(BINOP
-         (Tree.BINOP.PLUS,
-          expl.unEx(),
-          expr.unEx()));
+        (Tree.BINOP.PLUS,
+         expl.unEx(),
+         expr.unEx()));
   }
 
   @Override
   public void caseAMinusExpression(AMinusExpression node) {
-    // Completar aqui
+    Exp expl = visitAndGetExp(node.getLeft());
+    Exp expr = visitAndGetExp(node.getRight());
+    currentExpression = new Ex(BINOP
+        (Tree.BINOP.MINUS,
+         expl.unEx(),
+         expr.unEx()));
   }
 
   @Override
   public void caseATimesExpression(ATimesExpression node) {
-    // Completar aqui
+    Exp expl = visitAndGetExp(node.getLeft());
+    Exp expr = visitAndGetExp(node.getRight());
+    currentExpression = new Ex(BINOP
+        (Tree.BINOP.MUL,
+         expl.unEx(),
+         expr.unEx()));
   }
 
   @Override
@@ -237,31 +251,46 @@ public class Translate extends DepthFirstAdapter {
     Tree.Exp left = visitAndGetExp(node.getLeft()).unEx();
     Tree.Exp right = visitAndGetExp(node.getRight()).unEx();
 
-    currentExpression = new Ex
-        (ESEQ(SEQ
+    currentExpression = new Ex(ESEQ
         (SEQ
          (SEQ
-          (SEQ (SEQ (MOVE(TEMP(t1),CONST(0)),
-               CJUMP(Tree.CJUMP.EQ, left, CONST(1), ok1, done)),
-          SEQ(LABEL(ok1),
-              CJUMP(Tree.CJUMP.EQ, right, CONST(1), ok2, done))),
-           SEQ(LABEL(ok2),  MOVE(TEMP(t1),CONST(1)))),
-          JUMP(done)),
-         LABEL(done)),
-        TEMP(t1)));
+          (SEQ
+           (SEQ(SEQ(MOVE(TEMP(t1),CONST(0)),
+                    CJUMP(Tree.CJUMP.EQ, left, CONST(1), ok1, done)),
+                SEQ(LABEL(ok1),
+                  CJUMP(Tree.CJUMP.EQ, right, CONST(1), ok2, done))),
+            SEQ(LABEL(ok2),  MOVE(TEMP(t1),CONST(1)))),
+           JUMP(done)),
+          LABEL(done)),
+         TEMP(t1)));
   }
 
   @Override
   public void caseALessThanExpression(ALessThanExpression node) {
-    // Completar aqui
+    Temp t1 = new Temp();
+    Label F = new Label();
+    Label done = new Label();
+    Tree.Exp left = visitAndGetExp(node.getLeft()).unEx();
+    Tree.Exp right = visitAndGetExp(node.getRight()).unEx();
+
+    currentExpression = new Ex(ESEQ
+        (SEQ
+         (SEQ
+          (SEQ
+           (SEQ(MOVE(TEMP(t1),CONST(1)),
+                CJUMP(Tree.CJUMP.GE, left, right, F, done)),
+            SEQ(LABEL(F), MOVE(TEMP(t1),CONST(0)))),
+           JUMP(done)),
+          LABEL(done)),
+         TEMP(t1)));
   }
 
   @Override
   public void caseANotExpression(ANotExpression node) {
     Exp e = visitAndGetExp(node.getExpression());
     currentExpression = new Ex
-         (BINOP(Tree.BINOP.MINUS, CONST(1),
-          e.unEx()));
+      (BINOP(Tree.BINOP.MINUS, CONST(1),
+             e.unEx()));
   }
 
   @Override
@@ -283,19 +312,37 @@ public class Translate extends DepthFirstAdapter {
     Exp stmT = visitAndGetExp(node.getTrueStatement());
     Exp stmF = visitAndGetExp(node.getFalseStatement());
     currentExpression = new Nx(SEQ
-             (SEQ
-              (SEQ
-               (SEQ
-          (CJUMP(Tree.CJUMP.EQ,exp.unEx(),CONST(1),T,F),
-           SEQ(LABEL(T),stmT.unNx())),
-          JUMP(D)),
-               SEQ(LABEL(F),stmF.unNx())),
-              LABEL(D)));
+        (SEQ
+         (SEQ
+          (SEQ
+           (CJUMP(Tree.CJUMP.EQ,exp.unEx(),CONST(1),T,F),
+            SEQ(LABEL(T),stmT.unNx())),
+           JUMP(D)),
+          SEQ(LABEL(F),stmF.unNx())),
+         LABEL(D)));
   }
 
   @Override
   public void caseAWhileStatement(AWhileStatement node) {
-    // Completar aqui
+    Label L = new Label();
+    Label T = new Label();
+    Label D = new Label();
+    Exp exp = visitAndGetExp(node.getCondition());
+    Exp stm = visitAndGetExp(node.getStatement());
+    currentExpression = new Nx(SEQ
+        (SEQ
+         (SEQ
+          (SEQ(LABEL(L),CJUMP(Tree.CJUMP.EQ,exp.unEx(),CONST(1),T,D)),
+           SEQ(LABEL(T),stm.unNx())),
+          JUMP(L)),
+         LABEL(D)));
+
+    //    (SEQ
+    //     (SEQ
+    //      (LABEL(L),
+    //       SEQ(CJUMP(Tree.CJUMP.EQ,exp.unEx(),CONST(1),L,D),stm.unNx())),
+    //      JUMP(L)),
+    //     LABEL(D)));
   }
 
   @Override
@@ -338,19 +385,19 @@ public class Translate extends DepthFirstAdapter {
 
     // 2.Initialization
     Tree.Stm s2 =
-     SEQ
-     (SEQ
+      SEQ
       (SEQ
        (SEQ
         (SEQ
          (SEQ
-    (MOVE(TEMP(t2),CONST(4)),
-     SEQ (LABEL(cj),CJUMP(Tree.CJUMP.LT,TEMP(t2),size,F,T))),
-    LABEL(T)),
-         MOVE(MEM(BINOP(Tree.BINOP.PLUS,TEMP(t1),TEMP(t2))),CONST(0))),
-        MOVE(TEMP(t2),BINOP(Tree.BINOP.PLUS,TEMP(t2),CONST(4)))),
-       JUMP(cj)),
-      SEQ(LABEL(F),MOVE(MEM(TEMP(t1)),BINOP(Tree.BINOP.MUL,expSize.unEx(),CONST(4)))));
+          (SEQ
+           (MOVE(TEMP(t2),CONST(4)),
+            SEQ (LABEL(cj),CJUMP(Tree.CJUMP.LT,TEMP(t2),size,F,T))),
+           LABEL(T)),
+          MOVE(MEM(BINOP(Tree.BINOP.PLUS,TEMP(t1),TEMP(t2))),CONST(0))),
+         MOVE(TEMP(t2),BINOP(Tree.BINOP.PLUS,TEMP(t2),CONST(4)))),
+        JUMP(cj)),
+       SEQ(LABEL(F),MOVE(MEM(TEMP(t1)),BINOP(Tree.BINOP.MUL,expSize.unEx(),CONST(4)))));
 
     currentExpression = new Ex(ESEQ(SEQ(s1,s2),TEMP(t1)));
   }
@@ -374,30 +421,30 @@ public class Translate extends DepthFirstAdapter {
     Label F = new Label();
 
     e2 = ESEQ
-            (SEQ
-             (SEQ
-              (SEQ
-               (SEQ
-                (SEQ
-                 (MOVE(TEMP(t_index),
+      (SEQ
+       (SEQ
+        (SEQ
+         (SEQ
+          (SEQ
+           (MOVE(TEMP(t_index),
                  BINOP(Tree.BINOP.MUL,e2,CONST(4))),
             MOVE(TEMP(t_size),MEM(e1))),
-                 CJUMP(Tree.CJUMP.GE,TEMP(t_index),TEMP(t_size),T,F)),
-                LABEL(T)),
-               MOVE(TEMP(new Temp()),
-              CALL(NAME(new Label("_error")),args1))),
-              LABEL(F)),
-             TEMP(t_index));
+           CJUMP(Tree.CJUMP.GE,TEMP(t_index),TEMP(t_size),T,F)),
+          LABEL(T)),
+         MOVE(TEMP(new Temp()),
+           CALL(NAME(new Label("_error")),args1))),
+        LABEL(F)),
+       TEMP(t_index));
 
-  Tree.Exp e3 = visitAndGetExp(node.getValue()).unEx();
+    Tree.Exp e3 = visitAndGetExp(node.getValue()).unEx();
 
-  currentExpression = new Nx
-    (MOVE
-     (MEM
-      (BINOP
-       (Tree.BINOP.PLUS,e1,BINOP
-        (Tree.BINOP.PLUS,e2,CONST(4)))),
-      e3));
+    currentExpression = new Nx
+      (MOVE
+       (MEM
+        (BINOP
+         (Tree.BINOP.PLUS,e1,BINOP
+          (Tree.BINOP.PLUS,e2,CONST(4)))),
+        e3));
   }
 
   @Override
@@ -418,32 +465,89 @@ public class Translate extends DepthFirstAdapter {
         (SEQ
          (SEQ
           (MOVE(TEMP(t_index),BINOP(Tree.BINOP.MUL,e2,CONST(4))),
-      MOVE(TEMP(t_size),MEM(e1))),
+           MOVE(TEMP(t_size),MEM(e1))),
           CJUMP(Tree.CJUMP.GE,TEMP(t_index),TEMP(t_size),T,F)),
          LABEL(T)),
         MOVE(TEMP(new Temp()),
-       CALL(NAME(new Label("_error")),args1))),
+          CALL(NAME(new Label("_error")),args1))),
        LABEL(F));
 
-      Temp t = new Temp();
-      Tree.Stm s2 = SEQ
-    (s1,MOVE(TEMP(t),MEM
-       (BINOP(Tree.BINOP.PLUS,e1,BINOP
-        (Tree.BINOP.PLUS,
-         BINOP(Tree.BINOP.MUL,e2,CONST(4))
-         ,CONST(4))))));
+    Temp t = new Temp();
+    Tree.Stm s2 = SEQ
+      (s1,MOVE(TEMP(t),MEM
+               (BINOP(Tree.BINOP.PLUS,e1,BINOP
+                      (Tree.BINOP.PLUS,
+                       BINOP(Tree.BINOP.MUL,e2,CONST(4)),
+                       CONST(4))))));
 
-      currentExpression = new Ex(ESEQ(s2,TEMP(t)));
+    currentExpression = new Ex(ESEQ(s2,TEMP(t)));
   }
 
   @Override
   public void caseANewObjectExpression(ANewObjectExpression node) {
-    // Completar aqui
+    Class klass = symbolTable.getClass(node.getClassName().toString());
+    Temp t1 = new Temp();
+    Temp t2 = new Temp();
+    Label cj = new Label();
+    Label F = new Label();
+    Label T = new Label();
+
+    // Tree.Exp size = BINOP(Tree.BINOP.MUL,
+    //     BINOP(Tree.BINOP.PLUS,
+    //       CONST(klass.getNumberOfVars()),
+    //       CONST(1)),
+    //     CONST(4));
+
+    System.out.println("Num vars: " + klass.getNumberOfVars());
+    Tree.Exp size = CONST((klass.getNumberOfVars() + 1) * 4);
+
+    // 1. call _halloc get pointer to space allocated in t1
+    LinkedList<Tree.Exp> args = new LinkedList<Tree.Exp>();
+    args.add(size);
+    Tree.Stm s1 = MOVE(TEMP(t1), CALL(NAME(new Label("_halloc")), args));
+
+    // 2.Initialization
+    Tree.Stm s2 =
+      SEQ
+      (SEQ
+       (SEQ
+        (SEQ
+         (SEQ
+          (SEQ
+           (MOVE(TEMP(t2),CONST(0)),
+            SEQ (LABEL(cj),CJUMP(Tree.CJUMP.LT,TEMP(t2),size,F,T))),
+           LABEL(T)),
+          MOVE(MEM(BINOP(Tree.BINOP.PLUS,TEMP(t1),TEMP(t2))),CONST(0))),
+         MOVE(TEMP(t2),BINOP(Tree.BINOP.PLUS,TEMP(t2),CONST(4)))),
+        JUMP(cj)),
+       SEQ(LABEL(F),MOVE(MEM(TEMP(t1)),BINOP(Tree.BINOP.MUL,CONST(klass.getNumberOfVars()),CONST(4)))));
+
+    currentExpression = new Ex(ESEQ(SEQ(s1,s2),TEMP(t1)));
   }
 
   @Override
   public void caseACallExpression(ACallExpression node) {
     // Completar aqui
+
+    TypeCheckExpAnalysis analyzer =
+      new TypeCheckExpAnalysis(new TypeCheckAnalysis(currentClass, currentMethod, symbolTable));
+    node.getInstance().apply(analyzer);
+
+    String className = analyzer.getType().toString().replaceAll("\\s+","");
+    String methodName = node.getName().toString().replaceAll("\\s+","");
+
+    Tree.Exp instance = visitAndGetExp(node.getInstance()).unEx();
+    symbolTable.getClass();
+
+    LinkedList<Tree.Exp> args = new LinkedList<Tree.Exp>();
+    args.add(instance);
+
+    for (PExpression actual : node.getActuals()) {
+        args.add(visitAndGetExp(actual).unEx());
+    }
+
+    currentExpression = new Ex
+      (CALL(NAME(new Label(className + "_" + methodName)), args));
   }
 
   private static Tree.Exp CONST(int value)  { return new Tree.CONST(value); }
@@ -454,32 +558,32 @@ public class Translate extends DepthFirstAdapter {
   }
   private static Tree.Exp MEM(Tree.Exp exp) {  return new Tree.MEM(exp); }
   private static Tree.Exp CALL(Tree.Exp func, List<Tree.Exp> args) {
-      return new Tree.CALL(func, args);
+    return new Tree.CALL(func, args);
   }
   private static Tree.Exp ESEQ(Tree.Stm stm, Tree.Exp exp) {
-      if (stm == null) return exp;
-      return new Tree.ESEQ(stm, exp);
+    if (stm == null) return exp;
+    return new Tree.ESEQ(stm, exp);
   }
   private static Tree.Stm MOVE(Tree.Exp dst, Tree.Exp src) {
-      return new Tree.MOVE(dst, src);
+    return new Tree.MOVE(dst, src);
   }
   private static Tree.Stm EXP(Tree.Exp exp) {  return new Tree.EXPR(exp); }
   private static Tree.Stm JUMP(Label target) {
-      return new Tree.JUMP(target);
+    return new Tree.JUMP(target);
   }
   private static Tree.Stm CJUMP(int relop, Tree.Exp l, Tree.Exp r, Label t,
-        Label f) {
-      return new Tree.CJUMP(relop, l, r, t, f);
+      Label f) {
+    return new Tree.CJUMP(relop, l, r, t, f);
   }
   private static Tree.Stm SEQ(Tree.Stm left, Tree.Stm right) {
-      if (left == null)
-    return right;
-      if (right == null)
-    return left;
-      return new Tree.SEQ(left, right);
+    if (left == null)
+      return right;
+    if (right == null)
+      return left;
+    return new Tree.SEQ(left, right);
   }
   private static Tree.Stm LABEL(Label label) {
-      return new Tree.LABEL(label);
+    return new Tree.LABEL(label);
   }
 
   private Exp visitAndGetExp(Node node) {
