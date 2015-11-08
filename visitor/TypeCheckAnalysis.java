@@ -6,12 +6,18 @@ import minijava.node.*;
 import java.util.*;
 
 public class TypeCheckAnalysis extends DepthFirstAdapter {
-  static Class currClass;
-  static Method currMethod;
-  static SymbolTable symbolTable;
+  private Class currClass;
+  private Method currMethod;
+  private SymbolTable symbolTable;
 
-  public TypeCheckAnalysis(SymbolTable s){
-    symbolTable = s;
+  public TypeCheckAnalysis(SymbolTable symbolTable){
+    this.symbolTable = symbolTable;
+  }
+
+  public TypeCheckAnalysis(Class currClass, Method currMethod, SymbolTable symbolTable) {
+    this.currClass = currClass;
+    this.currMethod = currMethod;
+    this.symbolTable = symbolTable;
   }
 
   // Getters
