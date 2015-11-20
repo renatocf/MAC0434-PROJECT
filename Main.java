@@ -5,6 +5,7 @@ import visitor.*;
 import Mips.*;
 import java.io.*;
 import java.util.*;
+import Assem.Instr;
 
 public class Main {
   public static void main(String[] arguments) {
@@ -31,26 +32,58 @@ public class Main {
       Translate translate = new Translate(new MipsFrame() ,vb.getSymTab());
       ast.apply(translate);
 
-      // for (Iterator<visitor.Frag> frags = translate.getResults(); frags.hasNext(); ) {
-      //   //get next fragment
-      //   Frag f = frags.next();
+      for (Iterator<visitor.Frag> frags = translate.getResults(); frags.hasNext(); ) {
+        //get next fragment
+        Frag f = frags.next();
 
-      //   //if the fragment is a ProcFrag i.e one which contains a procedure
-      //   //then I get the map of temps associated with it and print it out.
+        //if the fragment is a ProcFrag i.e one which contains a procedure
+        //then I get the map of temps associated with it and print it out.
 
-      //   if (f instanceof ProcFrag) {
-      //     Temp.TempMap tempmap = new Temp.CombineMap(((ProcFrag)f).frame, new Temp.DefaultMap());
+        if (f instanceof ProcFrag) {
+          ProcFrag proc = (ProcFrag)f;
+          Temp.TempMap tempmap = new Temp.CombineMap(proc.frame, new Temp.DefaultMap());
+          System.out.println(proc.frame.toString());
 
-      //     // System.out.println("PROCEDURE :" + ((ProcFrag)f).frame.name);
-      //     System.out.println(((ProcFrag)f).frame.toString());
-      //   } else if (f instanceof DataFrag) {
-      //     System.out.println("PROGRAM_TAIL");
-      //   }
-      // }
-      InterpreterVisitor interpreter = new InterpreterVisitor(translate.getResults());
-      interpreter.start();
+          LinkedList<Tree.Stm> stms = Canon.Canon.linearize(proc.body);
+          proc.frame.procEntryExit1(stms);
+
+          for (Tree.Stm s : (LinkedList<Tree.Stm>)stms.clone()) {
+            java.io.PrintWriter writer = new PrintWriter(System.out);
+            Tree.Print printVisitor = new Tree.Print(writer, s);
+            writer.flush();
+          }
+
+          Canon.BasicBlocks basicBlocks = new Canon.BasicBlocks((LinkedList<Tree.Stm>)stms.clone());
+          Canon.TraceSchedule ts = new Canon.TraceSchedule(basicBlocks);
+
+          System.out.println("***********************************");
+          System.out.println("***********************************");
+          System.out.println("***********************************");
+
+          LinkedList<Instr> instrs = new LinkedList<Instr>();
+          for (LinkedList<LinkedList<Tree.Stm>> trace : ts.traces) {
+            for (LinkedList<Tree.Stm> block : trace) {
+              for (Tree.Stm s : block) {
+                LinkedList<Instr> ins = new LinkedList<Instr>();
+                s.accept(new Codegen((MipsFrame)proc.frame, (ListIterator<Instr>)ins.iterator()));
+                instrs.addAll(instrs.size(), ins);
+              }
+            }
+          }
+
+          for (Instr instr : instrs) {
+            System.out.println(instr.format(new MipsTempMap((MipsFrame)proc.frame)));
+          }
+
+        }
+        // else if (f instanceof DataFrag) {
+        //   System.out.println("PROGRAM_TAIL");
+        // }
+      }
     } catch(Exception e) {
-      System.out.println(e);
+      java.io.PrintWriter writer = new PrintWriter(System.out);
+      e.printStackTrace(writer);
+      writer.flush();
     }
   }
 }

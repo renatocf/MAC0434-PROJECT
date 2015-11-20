@@ -9,7 +9,8 @@ public abstract class Frame implements Temp.TempMap {
   public abstract Temp.Temp FP();
   public abstract Temp.Temp RV();
   public abstract String toString();
-
-  // novos
   public abstract String programTail();
+
+  public abstract void procEntryExit1(List<Tree.Stm> body);
+
 }

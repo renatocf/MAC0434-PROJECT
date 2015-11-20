@@ -1,6 +1,6 @@
 all: Main.class
 
-Main.class: Main.java visitor/SymbolTable.class visitor/BuildSymbolTableAnalysis.class visitor/TypeCheckAnalysis.class Temp/CombineMap.class Temp/DefaultMap.class Temp/Label.class Temp/Offset.class Temp/SimpleExp.class Temp/Temp.class Temp/TempMap.class Mips/MipsFrame.class Mips/InFrame.class Mips/InReg.class visitor/Translate.class InterpreterVisitor.class
+Main.class: Main.java visitor/SymbolTable.class visitor/BuildSymbolTableAnalysis.class visitor/TypeCheckAnalysis.class Temp/CombineMap.class Temp/DefaultMap.class Temp/Label.class Temp/Offset.class Temp/SimpleExp.class Temp/Temp.class Temp/TempMap.class Mips/MipsFrame.class Mips/InFrame.class Mips/InReg.class Mips/MipsTempMap.class Mips/Codegen.class visitor/Translate.class InterpreterVisitor.class Canon/BasicBlocks.class Canon/Canon.class Canon/TraceSchedule.class Assem/Instr.class Assem/LABEL.class Assem/MOVE.class Assem/OPER.class
 	javac Main.java
 
 InterpreterVisitor.class: InterpreterVisitor.java Tree/BINOP.class Tree/CALL.class Tree/CJUMP.class Tree/CONST.class Tree/CodeVisitor.class Tree/ESEQ.class Tree/EXPR.class Tree/Exp.class  Tree/ExpList.class  Tree/Hospitable.class  Tree/IntVisitor.class  Tree/JUMP.class  Tree/LABEL.class  Tree/MEM.class  Tree/MOVE.class  Tree/NAME.class  Tree/Print.class  Tree/ResultVisitor.class  Tree/SEQ.class  Tree/Stm.class  Tree/TEMP.class
@@ -84,6 +84,12 @@ Mips/InFrame.class: Frame/Access.class Mips/InFrame.java
 Mips/InReg.class: Frame/Access.class Mips/InReg.java
 	javac Mips/InReg.java
 
+Mips/MipsTempMap.class: Frame/Access.class Mips/MipsTempMap.java
+	javac Mips/MipsTempMap.java
+
+Mips/Codegen.class: Assem/Instr.class Assem/LABEL.class Assem/MOVE.class Assem/OPER.class Mips/Codegen.java
+	javac Mips/Codegen.java
+
 Tree/BINOP.class: Tree/BINOP.java
 	javac Tree/BINOP.java
 
@@ -147,10 +153,31 @@ Tree/Stm.class: Tree/Stm.java
 Tree/TEMP.class: Tree/TEMP.java
 	javac Tree/TEMP.java
 
+Canon/BasicBlocks.class: Canon/BasicBlocks.java
+	javac Canon/BasicBlocks.java
+
+Canon/Canon.class: Canon/Canon.java
+	javac Canon/Canon.java
+
+Canon/TraceSchedule.class: Canon/TraceSchedule.java
+	javac Canon/TraceSchedule.java
+
+Assem/Instr.class: Assem/Instr.java
+	javac Assem/Instr.java
+
+Assem/LABEL.class: Assem/LABEL.java
+	javac Assem/LABEL.java
+
+Assem/MOVE.class: Assem/MOVE.java
+	javac Assem/MOVE.java
+
+Assem/OPER.class: Assem/OPER.java
+	javac Assem/OPER.java
+
 minijava: minijava.sablecc
 	rm -rf minijava
 	./sablecc minijava.sablecc
 
 .PHONY: clean
 clean:
-	rm -rf minijava *.class visitor/*.class Frame/*.class Mips/*.class Symbol/*.class Temp/*.class Tree/*.class
+	rm -rf minijava *.class visitor/*.class Frame/*.class Mips/*.class Symbol/*.class Temp/*.class Tree/*.class Canon/*.class Assem/*.class
