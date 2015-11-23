@@ -54,7 +54,7 @@ public class Codegen implements Tree.CodeVisitor
       return right != null;
     switch (e.binop) {
       case Tree.BINOP.PLUS:
-      case Tree.BINOP.MUL:
+      // case Tree.BINOP.MUL:
       case Tree.BINOP.AND:
       case Tree.BINOP.OR:
       case Tree.BINOP.XOR:
@@ -92,6 +92,12 @@ public class Codegen implements Tree.CodeVisitor
 
       // MOVE(MEM(CONST), Exp)
       // COMPLETAR AQUI -> MOVE(MEM(CONST), Exp)
+      if (mem.exp instanceof Tree.CONST) {
+        emit(OPER("sw `s0 " + ((Tree.CONST)mem.exp).value + "($0)",
+              null,
+              new Temp[]{s.src.accept(this), frame.SP}));
+        return;
+      }
 
       // MOVE(MEM(TEMP), Exp)
       if (mem.exp instanceof Tree.TEMP) {
@@ -137,6 +143,11 @@ public class Codegen implements Tree.CodeVisitor
 
       // MOVE(TEMP, MEM(CONST))
       // COMPLETAR AQUI -> MOVE(TEMP, MEM(CONST))
+      if (mem.exp instanceof Tree.CONST) {
+        emit(OPER("lw `d0 " + ((Tree.CONST)mem.exp).value + "($0)",
+              new Temp[]{dst}, new Temp[]{frame.SP}));
+        return;
+      }
 
       // MOVE(TEMP, MEM(TEMP))
       if (mem.exp instanceof Tree.TEMP) {
@@ -162,6 +173,12 @@ public class Codegen implements Tree.CodeVisitor
 
   public void visit(Tree.JUMP s) {
     // COMPLETAR AQUI
+    // JUMP(Exp)
+    List<Label> targets = new LinkedList<Label>();
+    targets.add(s.targets.get(0));
+    emit(OPER("j " + targets.get(0),
+         null, new Temp[]{}, targets));
+    return;
   }
 
   private static boolean immediate(Tree.CJUMP s) {
@@ -274,7 +291,7 @@ public class Codegen implements Tree.CodeVisitor
   static {
     BINOP[Tree.BINOP.PLUS   ] = "add";
     BINOP[Tree.BINOP.MINUS  ] = "sub";
-    BINOP[Tree.BINOP.MUL    ] = "mulo";
+    BINOP[Tree.BINOP.MUL    ] = "mult";
     BINOP[Tree.BINOP.DIV    ] = "div";
     BINOP[Tree.BINOP.AND    ] = "and";
     BINOP[Tree.BINOP.OR     ] = "or";
@@ -297,7 +314,20 @@ public class Codegen implements Tree.CodeVisitor
 
   public Temp visit(Tree.BINOP e) {
     // COMPLETAR AQUI
-    return null;
+    Temp t = new Temp();
+
+    if (immediate(e)) {
+      int right = ((Tree.CONST)e.right).value;
+      // BINOP(op, Exp, CONST)
+      emit(OPER(BINOP[e.binop] + "i" + " `s0 " + right,
+            null, new Temp[]{e.left.accept(this)}));
+      return t;
+    }
+
+    // BINOP(op, Exp, Exp)
+    emit(OPER(BINOP[e.binop] + " `s0 `s1 ",
+          null, new Temp[]{e.left.accept(this), e.right.accept(this)}));
+    return t;
   }
 
   public Temp visit(Tree.MEM e) {
