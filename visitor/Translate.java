@@ -498,7 +498,6 @@ public class Translate extends DepthFirstAdapter {
     //       CONST(1)),
     //     CONST(4));
 
-    System.out.println("Num vars: " + klass.getNumberOfVars());
     Tree.Exp size = CONST((klass.getNumberOfVars() + 1) * 4);
 
     // 1. call _halloc get pointer to space allocated in t1
