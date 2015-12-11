@@ -1,6 +1,6 @@
 all: Main.class
 
-Main.class: Main.java visitor/SymbolTable.class visitor/BuildSymbolTableAnalysis.class visitor/TypeCheckAnalysis.class Temp/CombineMap.class Temp/DefaultMap.class Temp/Label.class Temp/Offset.class Temp/SimpleExp.class Temp/Temp.class Temp/TempMap.class Mips/MipsFrame.class Mips/InFrame.class Mips/InReg.class Mips/MipsTempMap.class Mips/Codegen.class visitor/Translate.class InterpreterVisitor.class Canon/BasicBlocks.class Canon/Canon.class Canon/TraceSchedule.class Assem/Instr.class Assem/LABEL.class Assem/MOVE.class Assem/OPER.class
+Main.class: Main.java visitor/SymbolTable.class visitor/BuildSymbolTableAnalysis.class visitor/TypeCheckAnalysis.class Temp/CombineMap.class Temp/DefaultMap.class Temp/Label.class Temp/Offset.class Temp/SimpleExp.class Temp/Temp.class Temp/TempMap.class Mips/MipsFrame.class Mips/InFrame.class Mips/InReg.class Mips/MipsTempMap.class Mips/Codegen.class visitor/Translate.class InterpreterVisitor.class Canon/BasicBlocks.class Canon/Canon.class Canon/TraceSchedule.class Assem/Instr.class Assem/LABEL.class Assem/MOVE.class Assem/OPER.class Graph/Graph.class Graph/Node.class Graph/NodeList.class RegAlloc/InterferenceGraph.class RegAlloc/MoveList.class RegAlloc/RegAlloc.class
 	javac Main.java
 
 InterpreterVisitor.class: InterpreterVisitor.java Tree/BINOP.class Tree/CALL.class Tree/CJUMP.class Tree/CONST.class Tree/CodeVisitor.class Tree/ESEQ.class Tree/EXPR.class Tree/Exp.class  Tree/ExpList.class  Tree/Hospitable.class  Tree/IntVisitor.class  Tree/JUMP.class  Tree/LABEL.class  Tree/MEM.class  Tree/MOVE.class  Tree/NAME.class  Tree/Print.class  Tree/ResultVisitor.class  Tree/SEQ.class  Tree/Stm.class  Tree/TEMP.class
@@ -173,6 +173,27 @@ Assem/MOVE.class: Assem/MOVE.java
 
 Assem/OPER.class: Assem/OPER.java
 	javac Assem/OPER.java
+
+FlowGraph/FlowGraph.class: FlowGraph/FlowGraph.java
+	javac FlowGraph/FlowGraph.java
+
+Graph/Graph.class: Graph/Node.class Graph/NodeList.class Graph/Graph.java
+	javac Graph/Graph.java
+
+Graph/Node.class: Graph/Node.java
+	javac Graph/Node.java
+
+Graph/NodeList.class: Graph/NodeList.java
+	javac Graph/NodeList.java
+
+RegAlloc/InterferenceGraph.class: RegAlloc/InterferenceGraph.java
+	javac RegAlloc/InterferenceGraph.java
+
+RegAlloc/MoveList.class: RegAlloc/MoveList.java
+	javac RegAlloc/MoveList.java
+
+RegAlloc/RegAlloc.class: RegAlloc/RegAlloc.java
+	javac RegAlloc/RegAlloc.java
 
 minijava: minijava.sablecc
 	rm -rf minijava
